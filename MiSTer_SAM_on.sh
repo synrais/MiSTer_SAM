@@ -4089,7 +4089,6 @@ get_dlmanager() {
 	fi
 }
 
-
 function sam_update() { # sam_update (next command)
 
 	if ping -4 -q -w 1 -c 1 github.com > /dev/null; then 
@@ -4179,8 +4178,8 @@ function sam_update() { # sam_update (next command)
 	fi
 
 	echo " Update complete!"
-	return
-	
+
+	# Post-update actions
 	mcp_start
 
 	if [ "${inmenu}" -eq 1 ]; then
@@ -4188,8 +4187,8 @@ function sam_update() { # sam_update (next command)
 		sam_menu
 	fi
 
+	return
 }
-
 
 # ========= MAIN =========
 
