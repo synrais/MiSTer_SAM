@@ -179,14 +179,26 @@ function init_vars() {
 	declare -gl rating="No"
 	declare -gl dupe_mode="normal"
 	declare -gl listenmouse="Yes"
-	declare -gl listenkeyboard="Yes"
-	declare -gl listenjoy="Yes"
- 	declare -gl mgls_dirs=""
-	declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
-	declare -g branch="main"
-	declare -g raw_base="https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/${branch}"
-	declare -gi counter=0
-	declare -gA corewc
+    declare -gl listenkeyboard="Yes"
+    declare -gl listenjoy="Yes"
+    declare -gl mgls_dirs=""
+    # ======== SCREEN CHECK OPTIONS =======
+    declare -gl skip_black_screens="no"
+    declare -g black_screen_time=5
+    declare -gl black_screen_close="no"
+    declare -gl black_screen_add="yes"
+    declare -gl skip_static_screens="no"
+    declare -g static_screen_time=10
+    declare -gl static_screen_add="no"
+    declare -gA SCALER_DELAY=()
+    declare -g scaler_info_pid=""
+    declare -g scaler_info_path="${mrsampath}/scaler_info"
+    declare -g scaler_log="${mrsamtmp}/scaler_info.log"
+    declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
+    declare -g branch="main"
+    declare -g raw_base="https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/${branch}"
+    declare -gi counter=0
+    declare -gA corewc
 	declare -gA corep
     declare -gA CORE_AUTO_INPUTS=()
 	declare -g userstartup="/media/fat/linux/user-startup.sh"
@@ -678,10 +690,15 @@ function read_samini() {
 	fi
 
 	#NES M82 Mode
-	if [ "$m82" == "yes" ]; then	
-		build_m82_list
-	fi
-	
+        if [ "$m82" == "yes" ]; then
+                build_m82_list
+        fi
+
+        for var in ${!scaler_delay_*}; do
+                core=${var#scaler_delay_}
+                SCALER_DELAY["$core"]="${!var}"
+        done
+
 }
 
 
@@ -940,12 +957,48 @@ function loop_core() { # loop_core (optional_core_name)
 			continue
 		fi
 		# ----------------------------------------------------
-	done
+        done
+}
+
+function start_scaler_monitor() {
+    local core="$1"
+    if [[ "$skip_black_screens" != "yes" && "$skip_static_screens" != "yes" ]]; then
+        return
+    fi
+    "${scaler_info_path}" > "${scaler_log}" &
+    scaler_info_pid=$!
+    local delay="${SCALER_DELAY[$core]}"
+    if [[ -n "$delay" && "$delay" -gt 0 ]]; then
+        sleep "$delay"
+    fi
+}
+
+function stop_scaler_monitor() {
+    if [[ -n "$scaler_info_pid" ]]; then
+        kill "$scaler_info_pid" 2>/dev/null
+        scaler_info_pid=""
+    fi
+    rm -f "${scaler_log}" 2>/dev/null
+}
+
+function add_to_blacklist() {
+    local core="$1"
+    local name="$2"
+    local blfile="${gamelistpath}/${CORE_BLACKLIST[$core]:-${core}_blacklist.txt}"
+    echo "$name" >> "$blfile"
+    sort -u -o "$blfile" "$blfile"
+}
+
+function add_to_staticlist() {
+    local core="$1"
+    local name="$2"
+    local sfile="${gamelistpath}/${core}_staticlist.txt"
+    echo "$name" >> "$sfile"
+    sort -u -o "$sfile" "$sfile"
 }
 
 function run_countdown_timer() {
-    local counter=${gametimer}
-    
+    local counter=${gametimer}    
     # Set a local trap to handle Ctrl+C during the countdown, allowing a graceful skip.
     trap 'echo; return' INT
 
@@ -962,7 +1015,41 @@ function run_countdown_timer() {
 
         sleep 1
         ((counter--))
-        
+
+        if [[ "$skip_black_screens" == "yes" || "$skip_static_screens" == "yes" ]]; then
+            local sinfo=$(tail -n1 "$scaler_log" 2>/dev/null)
+            local stime=$(echo "$sinfo" | grep -o 'StaticTime=[0-9.]*' | cut -d= -f2)
+            [[ -z "$stime" ]] && stime=0
+
+            if [[ "$skip_black_screens" == "yes" ]]; then
+                local rgb=$(echo "$sinfo" | grep -o 'RGB=#......' | cut -d= -f2)
+                local cname=$(echo "$sinfo" | awk -F '-> ' '{print $2}' | awk '{print $1}')
+                if awk -v st="$stime" -v thr="$black_screen_time" 'BEGIN{exit !(st>=thr)}'; then
+                    local isblack=0
+                    if [[ "$black_screen_close" == "yes" ]]; then
+                        [[ "$cname" == "Black" ]] && isblack=1
+                    else
+                        [[ "${rgb^^}" == "#000000" ]] && isblack=1
+                    fi
+                    if [ $isblack -eq 1 ]; then
+                        echo "Black screen detected. Skipping game."
+                        [[ "$black_screen_add" == "yes" ]] && add_to_blacklist "$nextcore" "${romname%.*}"
+                        stop_scaler_monitor
+                        return
+                    fi
+                fi
+            fi
+
+            if [[ "$skip_static_screens" == "yes" ]]; then
+                if awk -v st="$stime" -v thr="$static_screen_time" 'BEGIN{exit !(st>=thr)}'; then
+                    echo "Static screen detected. Skipping game."
+                    [[ "$static_screen_add" == "yes" ]] && add_to_staticlist "$nextcore" "${romname%.*}"
+                    stop_scaler_monitor
+                    return
+                fi
+            fi
+        fi
+
         # --- Activity Checks ---
         # NOTE: This section could also be refactored into a helper function
         # to make the countdown loop even cleaner.
@@ -981,12 +1068,14 @@ function run_countdown_timer() {
         fi
 
         if [ -s "$joy_activity_file" ] && [ "${listenjoy}" == "yes" ]; then
-            handle_joy_activity 
+            handle_joy_activity
             if [ $? -eq 1 ]; then # Check if handle_joy_activity wants to break the loop
                 return
             fi
         fi
     done
+
+    stop_scaler_monitor
 
     # Restore the default INT trap once the countdown is over.
     trap - INT
@@ -2627,7 +2716,8 @@ function sam_prep() {
 }
 
 function sam_cleanup() {
-	# Clean up by umounting any mount binds
+    stop_scaler_monitor
+    # Clean up by umounting any mount binds
 	#[ -f "${configpath}/Volume.dat" ] && [ ${mute} == "yes" ] && rm "${configpath}/Volume.dat"
 	only_unmute_if_needed
 	[ "$(mount | grep -ic "${amigapath}"/shared)" == "1" ] && umount -l "${amigapath}/shared"
