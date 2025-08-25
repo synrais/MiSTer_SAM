@@ -2873,25 +2873,6 @@ function delete_from_corelist() { # delete_from_corelist core tmp
 	fi
 }
 
-
-function reset_core_gl() { # args ${nextcore}
-	echo " Deleting old game lists for ${1^^}..."
-	rm "${gamelistpath}/${1}_gamelist.txt" &>/dev/null
-	sync "${gamelistpath}"
-}
-
-
-
-function core_error_checklist() { # core_error core /path/to/ROM
-		delete_from_corelist "${1}"
-		echo " List of cores is now: ${corelist[*]}"
-		declare -g romloadfails=0
-		# Load a different core
-		next_core
-
-}
-
-
 function disable_bootrom() {
 	if [ "${disablebootrom}" == "yes" ]; then
 		# Make Bootrom folder inaccessible until restart
@@ -3021,63 +3002,7 @@ function only_unmute_if_needed() {
     return 1    # indicate no action taken
   fi
 }
-
-
-function check_zips() { # check_zips core
-	# Check if zip still exists
-	#samdebug "Checking zips in file..."
-	unset zipsondisk
-	unset zipsinfile
-	unset files
-	unset newfiles
-	mapfile -t zipsinfile < <(fgrep ".zip" "${gamelistpath}/${1}_gamelist.txt" | awk -F".zip" '!seen[$1]++' | awk -F".zip" '{print $1}' | sed -e 's/$/.zip/')
-	if [ ${#zipsinfile[@]} -gt 0 ]; then
-		for zips in "${zipsinfile[@]}"; do
-			if [ ! -f "${zips}" ]; then
-				samdebug "Creating new game list because zip file[s] seems to have changed."
-				build_gamelist "${1}"
-				unset zipsinfile
-				mapfile -t zipsinfile < <(fgrep ".zip" "${gamelistpath}/${1}_gamelist.txt" | awk -F".zip" '!seen[$1]++' | awk -F".zip" '{print $1}' | sed -e 's/$/.zip/')
-				break
-				return
-			fi
-		done
-		#samdebug "Done."
-        #samdebug -n "Checking zips on disk..."
-        if [ "${checkzipsondisk}" == "yes" ] || [ "${force_zip_scan}" == "yes" ]; then
-                # Check for new zips
-                corepath="$("${mrsampath}"/samindex -q -s "${1}" -d |awk -F':' '{print $2}')"
-                readarray -t files <<< "$(find "${corepath}" -maxdepth 2 -type f -name "*.zip")"
-                extgrep=$(echo ".${CORE_EXT[${1}]}" | sed -e "s/,/\\\|/g"| sed 's/,/,./g')
-                # Check which files have valid roms
-                readarray -t newfiles <<< "$(printf '%s\n'  "${zipsinfile[@]}" "${files[@]}"  | sort | uniq -iu )"
-                if [[ "${newfiles[*]}" ]]; then
-                        for f in "${newfiles[@]}"; do
-                                if [ -f "${f}" ]; then
-                                        if "${mrsampath}"/partun -l "${f}" --ext "${extgrep}" | grep -q "${extgrep}"; then
-                                                zipsondisk+=( "${f}" )
-                                        fi
-                                else
-                                        samdebug "Zip file ${f} not found"
-                                fi
-                        done
-                fi
-                if [[ "${zipsondisk[*]}" ]]; then
-                        result="$(printf '%s\n' "${zipsondisk[@]}")"
-                        if [[ "${result}" ]]; then
-                                samdebug "Found new zip file[s]: ${result##*/}"
-                                build_gamelist "${1}"
-                                force_zip_scan="No"
-                                return
-                        fi
-                fi
-                force_zip_scan="No"
-        fi
-	fi
-	#samdebug "Done."
-}
 	
-
 function filter_list() { # args: core
     local core=${1}
     local master_list="${gamelistpath}/${core}_gamelist.txt"
