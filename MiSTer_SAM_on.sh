@@ -972,7 +972,8 @@ function loop_core() { # loop_core (optional_core_name)
 			echo "Trying the next available core..."
 			continue
 		fi
-		# ----------------------------------------------------
+                # ----------------------------------------------------
+        done
         done
 }
 
