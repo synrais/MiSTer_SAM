@@ -937,18 +937,12 @@ function loop_core() { # loop_core (optional_core_name)
         echo "" >/tmp/SAM_Games.log
         samdebug "Initial corelist: ${corelist[*]}"
 
-	# This is the main script loop that runs forever.
-	while :; do
-         if [[ "$skip_black_screens" == "yes" || "$skip_static_screens" == "yes" ]]; then
-            start_scaler_monitor
-        fi
-
         # This is the main script loop that runs forever.
         while :; do
-		# ----------------------------------------------------
-		# Call next_core to attempt a game launch.
-		# We pass along any argument that might have been given to loop_core.		
-		next_core "${1-}" 
+            	# ----------------------------------------------------
+            	# Call next_core to attempt a game launch.
+           	 	# We pass along any argument that might have been given to loop_core.
+            	next_core "${1-}"
 
 		# Check the exit code of the next_core function.
 		if [ $? -eq 0 ]; then
@@ -972,9 +966,8 @@ function loop_core() { # loop_core (optional_core_name)
 			echo "List of cores is now: ${corelist[*]}"
 			echo "Trying the next available core..."
 			continue
-		fi
+                fi
                 # ----------------------------------------------------
-        done
         done
 }
 
@@ -985,6 +978,7 @@ function start_scaler_monitor() {
     if [[ -n "$scaler_info_pid" ]]; then
         return
     fi
+	scaler_info_last=""
     samdebug "Starting scaler monitor"
     coproc SINFO { "${scaler_info_path}"; }
     scaler_info_pid=$COPROC_PID
@@ -1009,6 +1003,7 @@ function stop_scaler_monitor() {
         exec {scaler_info_fd}<&-
         scaler_info_fd=""
     fi
+    scaler_info_last=""
 }
 
 function add_to_blacklist() {
@@ -1029,7 +1024,15 @@ function add_to_staticlist() {
 
 function run_countdown_timer() {
     local counter=${gametimer}
-
+    start_scaler_monitor
+    scaler_info_last=""
+    if [[ -n "$scaler_info_fd" ]]; then
+        local line
+        # Flush any pending scaler output using newline-delimited reads
+        while IFS= read -r -t 0 -u "$scaler_info_fd" line; do
+            :
+        done
+    fi
     set_scaler_delay "$nextcore"
 
     # Set a local trap to handle Ctrl+C during the countdown, allowing a graceful skip.
@@ -1051,10 +1054,11 @@ function run_countdown_timer() {
 
         if [[ "$skip_black_screens" == "yes" || "$skip_static_screens" == "yes" ]]; then
             if [[ -n "$scaler_info_fd" ]]; then
-                local chunk
-                while IFS= read -r -t 0 -u "$scaler_info_fd" chunk; do
-                    scaler_info_last+="$chunk"
-                    scaler_info_last="${scaler_info_last##*$'\r'}"
+                local line
+                # Read the latest scaler_info line; strip any carriage return
+                while IFS= read -r -t 0 -u "$scaler_info_fd" line; do
+                    line=${line%$'\r'}
+                    scaler_info_last="$line"
                 done
             fi
             local sinfo="$scaler_info_last"
