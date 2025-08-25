@@ -704,6 +704,7 @@ function read_samini() {
         for var in ${!scaler_delay_*}; do
                 core=${var#scaler_delay_}
                 SCALER_DELAY["$core"]="${!var}"
+                samdebug "Custom scaler delay for ${core}: ${!var}s"
         done
 
 }
@@ -972,10 +973,12 @@ function start_scaler_monitor() {
     if [[ "$skip_black_screens" != "yes" && "$skip_static_screens" != "yes" ]]; then
         return
     fi
+    samdebug "Starting scaler monitor for ${core}"
     "${scaler_info_path}" > "${scaler_log}" &
     scaler_info_pid=$!
     local delay="${SCALER_DELAY[$core]}"
-    if [[ -n "$delay" && "$delay" -gt 0 ]]; then
+    if [[ -n "$delay" && "$delay" -gt 0 ]]; then	
+	        samdebug "Delaying screen check for ${core} by ${delay}s"
         sleep "$delay"
     fi
 }
@@ -984,6 +987,7 @@ function stop_scaler_monitor() {
     if [[ -n "$scaler_info_pid" ]]; then
         kill "$scaler_info_pid" 2>/dev/null
         scaler_info_pid=""
+        samdebug "Stopped scaler monitor"
     fi
     rm -f "${scaler_log}" 2>/dev/null
 }
@@ -1028,12 +1032,14 @@ function run_countdown_timer() {
 
         if [[ "$skip_black_screens" == "yes" || "$skip_static_screens" == "yes" ]]; then
             local sinfo=$(tail -n1 "$scaler_log" 2>/dev/null)
+	        samdebug "Scaler info: $sinfo"		
             local stime=$(echo "$sinfo" | grep -o 'StaticTime=[0-9.]*' | cut -d= -f2)
             [[ -z "$stime" ]] && stime=0
 
             if [[ "$skip_black_screens" == "yes" ]]; then
                 local rgb=$(echo "$sinfo" | grep -o 'RGB=#......' | cut -d= -f2)
                 local cname=$(echo "$sinfo" | awk -F '-> ' '{print $2}' | awk '{print $1}')
+				samdebug "Checking black screen: stime=${stime} threshold=${black_screen_time} rgb=${rgb} cname=${cname}"
                 if awk -v st="$stime" -v thr="$black_screen_time" 'BEGIN{exit !(st>=thr)}'; then
                     local isblack=0
                     if [[ "$black_screen_close" == "yes" ]]; then
@@ -1042,6 +1048,7 @@ function run_countdown_timer() {
                         [[ "${rgb^^}" == "#000000" ]] && isblack=1
                     fi
                     if [ $isblack -eq 1 ]; then
+						samdebug "Black screen detected for ${nextcore} (${romname%.*})"
                         echo "Black screen detected. Skipping game."
                         [[ "$black_screen_add" == "yes" ]] && add_to_blacklist "$nextcore" "${romname%.*}"
                         stop_scaler_monitor
@@ -1051,7 +1058,9 @@ function run_countdown_timer() {
             fi
 
             if [[ "$skip_static_screens" == "yes" ]]; then
+				samdebug "Checking static screen: stime=${stime} threshold=${static_screen_time}"
                 if awk -v st="$stime" -v thr="$static_screen_time" 'BEGIN{exit !(st>=thr)}'; then
+		            samdebug "Static screen detected for ${nextcore} (${romname%.*})"
                     echo "Static screen detected. Skipping game."
                     [[ "$static_screen_add" == "yes" ]] && add_to_staticlist "$nextcore" "${romname%.*}"
                     stop_scaler_monitor
