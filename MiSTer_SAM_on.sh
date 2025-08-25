@@ -1028,8 +1028,9 @@ function run_countdown_timer() {
     scaler_info_last=""
     if [[ -n "$scaler_info_fd" ]]; then
         local line
-        # Flush any pending scaler output using newline-delimited reads
-        while IFS= read -r -t 0 -u "$scaler_info_fd" line; do
+        local max_flush=100
+        # Flush any pending scaler output but avoid an infinite loop by limiting reads
+        while (( max_flush-- > 0 )) && IFS= read -r -t 0 -u "$scaler_info_fd" line; do
             :
         done
     fi
