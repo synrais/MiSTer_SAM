@@ -2668,16 +2668,13 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             fi
             # --- End Prerequisite Check ---
 
-            local amiga_title_raw
-            amiga_title_raw=$(pick_random_game "amiga")
-
-            if [ -z "${amiga_title_raw}" ]; then
+            if [ -z "${rompath_arg}" ]; then
                 echo "ERROR: Failed to pick an Amiga game from the list." >&2
                 return 1
             fi
 
-            gamename="$(echo "${amiga_title_raw}" | sed 's/Demo: //' | tr '_' ' ')"
-            local ags_boot_title="${amiga_title_raw//Demo: /}"
+            gamename="$(echo "${rompath_arg}" | sed 's/Demo: //' | tr '_' ' ')"
+            local ags_boot_title="${rompath_arg//Demo: /}"
             echo "${ags_boot_title}" > "${amigapath}/shared/ags_boot"
             rompath="${gamename}"
 
