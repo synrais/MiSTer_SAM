@@ -2116,6 +2116,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             tty_corename=$(grep "<setname>" "${rompath}" | sed -e 's/<setname>//' -e 's/<\/setname>//' | tr -cd '[:alnum:]')
             mute_target="${tty_corename:-$gamename}"
             launch_cmd="load_core ${rompath}"
+            send_auto_inputs "${core}" &
             ;;
 
         "ao486")
@@ -2183,6 +2184,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             tty_corename="${core}"
             mute_target="${core}"
             launch_cmd="load_core ${rompath}"
+            send_auto_inputs "${core}" &
             ;;
 
         "mgls")
@@ -2225,6 +2227,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             else
                 launch_cmd="load_core ${amigacore}"
             fi
+            send_auto_inputs "${core}" &
             ;;
 
         "amigacd32")
