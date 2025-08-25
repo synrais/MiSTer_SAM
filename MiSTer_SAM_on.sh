@@ -193,8 +193,8 @@ function init_vars() {
 	declare -g scaler_delay=0
     declare -gA SCALER_DELAY=()
     declare -g scaler_info_pid=""
+    declare -g scaler_info_fd=""
     declare -g scaler_info_path="${mrsampath}/scaler_info"
-    declare -g scaler_log="${mrsamtmp}/scaler_info.log"
     declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
     declare -g branch="main"
     declare -g raw_base="https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/${branch}"
@@ -975,11 +975,12 @@ function start_scaler_monitor() {
         return
     fi
     samdebug "Starting scaler monitor for ${core}"
-    "${scaler_info_path}" > "${scaler_log}" &
-    scaler_info_pid=$!
+    coproc SINFO { "${scaler_info_path}"; }
+    scaler_info_pid=$COPROC_PID
+    scaler_info_fd=${SINFO[0]}
     local delay="${SCALER_DELAY[$core]:-$scaler_delay}"
     if [[ -n "$delay" && "$delay" -gt 0 ]]; then
-        samdebug "Delaying screen check for ${core} by ${delay}s"
+                samdebug "Delaying screen check for ${core} by ${delay}s"
         sleep "$delay"
     fi
 }
@@ -987,10 +988,14 @@ function start_scaler_monitor() {
 function stop_scaler_monitor() {
     if [[ -n "$scaler_info_pid" ]]; then
         kill "$scaler_info_pid" 2>/dev/null
+        wait "$scaler_info_pid" 2>/dev/null
         scaler_info_pid=""
         samdebug "Stopped scaler monitor"
     fi
-    rm -f "${scaler_log}" 2>/dev/null
+    if [[ -n "$scaler_info_fd" ]]; then
+        exec {scaler_info_fd}<&-
+        scaler_info_fd=""
+    fi
 }
 
 function add_to_blacklist() {
@@ -1032,8 +1037,13 @@ function run_countdown_timer() {
         ((counter--))
 
         if [[ "$skip_black_screens" == "yes" || "$skip_static_screens" == "yes" ]]; then
-            local sinfo=$(tail -n1 "$scaler_log" 2>/dev/null)
-	        samdebug "Scaler info: $sinfo"		
+            local sinfo=""
+            local line=""
+            if [[ -n "$scaler_info_fd" ]]; then
+                while read -t 0 -u "$scaler_info_fd" line; do
+                    sinfo="$line"
+                done
+            fi	
             local stime=$(echo "$sinfo" | grep -o 'StaticTime=[0-9.]*' | cut -d= -f2)
             [[ -z "$stime" ]] && stime=0
 
