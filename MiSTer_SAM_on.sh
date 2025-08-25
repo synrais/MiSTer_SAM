@@ -41,7 +41,7 @@ function init_vars() {
 	declare -g sampid="${$}"
 	declare -g samprocess
 	samprocess="$(basename -- "${0}")"
-	declare -g menuonly="Yes"
+	declare -g menuonly="yes"
 	declare -g key_activity_file="/tmp/.SAM_tmp/SAM_Keyboard_Activity"
 	declare -g joy_activity_file="/tmp/.SAM_tmp/SAM_Joy_Activity"
 	declare -g mouse_activity_file="/tmp/.SAM_tmp/SAM_Mouse_Activity"
@@ -66,26 +66,26 @@ function init_vars() {
 	declare -gi gametimer=120
 	declare -gl corelist="amiga,amigacd32,ao486,arcade,atari2600,atari5200,atari7800,atarilynx,c64,cdi,coco2,colecovision,intellivision,fds,gb,gbc,gba,genesis,gg,jaguar,megacd,n64,neogeo,neogeocd,nes,s32x,saturn,sgb,sms,snes,stv,tgfx16,tgfx16cd,vectrex,wonderswan,wonderswancolor,psx,x68k,mgls"
 	declare -gl corelistall="${corelist}"
-	declare -gl skipmessage="Yes"
+	declare -gl skipmessage="yes"
 	declare -gl disablebootrom="no"
 	declare -gl skiptime="10"
-	declare -gl norepeat="Yes"
-	declare -gl disable_blacklist="No"
+	declare -gl norepeat="yes"
+	declare -gl disable_blacklist="no"
 	declare -gl amigaselect="All"
 	declare -gl m82="no"
 	declare -gl sam_goat_list="no"
-	declare -gl mute="No"
+	declare -gl mute="no"
 	declare -gi update_done=0
 	declare -gl ignore_when_skip="no"
-	declare -gl coreweight="No"
+	declare -gl coreweight="no"
 	declare -gi gamelists_created=0
-	declare -gl playcurrentgame="No"
-	declare -gl kids_safe="No"
-	declare -gl rating="No"
+	declare -gl playcurrentgame="no"
+	declare -gl kids_safe="no"
+	declare -gl rating="no"
 	declare -gl dupe_mode="normal"
-	declare -gl listenmouse="Yes"
-	declare -gl listenkeyboard="Yes"
-	declare -gl listenjoy="Yes"
+	declare -gl listenmouse="yes"
+	declare -gl listenkeyboard="yes"
+	declare -gl listenjoy="yes"
  	declare -gl mgls_dirs=""
 	declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
 	declare -g branch="main"
@@ -95,26 +95,26 @@ function init_vars() {
 	declare -gA corep
 	declare -g userstartup="/media/fat/linux/user-startup.sh"
 	declare -g userstartuptpl="/media/fat/linux/_user-startup.sh"
-	declare -gl useneogeotitles="Yes"
+	declare -gl useneogeotitles="yes"
 	declare -gl arcadeorient
-	declare -gl checkzipsondisk="No"
- 	declare -gl force_zip_scan="No"
-  	declare -gl check_for_new_games="Yes"
-    declare -gl update_gamelists_during_play="No"
+	declare -gl checkzipsondisk="no"
+ 	declare -gl force_zip_scan="no"
+  	declare -gl check_for_new_games="yes"
+    declare -gl update_gamelists_during_play="no"
 	declare -gi bootsleep="60"
 	declare -gi totalgamecount		
 	# ======== DEBUG VARIABLES ========
-	declare -gl samdebug="No"
-	declare -gl samdebuglog="No"						
+	declare -gl samdebug="no"
+	declare -gl samdebuglog="no"						
 	# ======== BGM =======
-	declare -gl bgm="No"
-	declare -gl bgmplay="Yes"
-	declare -gl bgmstop="Yes"
+	declare -gl bgm="no"
+	declare -gl bgmplay="yes"
+	declare -gl bgmstop="yes"
 	declare -gi gvoladjust="0"
 	
 	# ======== TTY2OLED =======
 	declare -g TTY_cmd_pipe="${mrsamtmp}/TTY_cmd_pipe"
-	declare -gl ttyenable="No"
+	declare -gl ttyenable="no"
 	declare -gi ttyupdate_pause=10
 	declare -g tty_currentinfo_file=${mrsamtmp}/tty_currentinfo
 	declare -g tty_sleepfile="/tmp/tty2oled_sleep"
@@ -423,45 +423,45 @@ function init_data() {
 
 	# Can this core skip Bios/Safety warning messages
 	declare -glA CORE_SKIP=(
-		["amiga"]="No"
-		["amigacd32"]="Yes"
-		["ao486"]="No"
-		["arcade"]="No"
-		["atari2600"]="No"
-		["atari5200"]="No"
-		["atari7800"]="No"
-		["atarilynx"]="No"		
-		["c64"]="No"
-		["cdi"]="No"
-		["coco2"]="No"
-  		["colecovision"]="No"
-		["intellivision"]="Yes"
-		["fds"]="Yes"
-		["gb"]="No"
-		["gbc"]="No"
-		["gba"]="No"
-		["genesis"]="No"
-		["gg"]="No"
-		["jaguar"]="No"
-		["megacd"]="Yes"
-		["n64"]="No"
-		["neogeo"]="No"
-		["neogeocd"]="Yes"
-		["nes"]="No"
-		["s32x"]="No"
-		["saturn"]="Yes"
-		["sgb"]="No"
-		["sms"]="No"
-        ["snes"]="No"
-        ["stv"]="No"
-        ["tgfx16"]="No"
-        ["tgfx16cd"]="Yes"
-        ["psx"]="No"
-        ["vectrex"]="No"
-        ["wonderswan"]="No"
-        ["wonderswancolor"]="No"
-        ["x68k"]="No"
-        ["mgls"]="No"
+		["amiga"]="no"
+		["amigacd32"]="yes"
+		["ao486"]="no"
+		["arcade"]="no"
+		["atari2600"]="no"
+		["atari5200"]="no"
+		["atari7800"]="no"
+		["atarilynx"]="no"		
+		["c64"]="no"
+		["cdi"]="no"
+		["coco2"]="no"
+  		["colecovision"]="no"
+		["intellivision"]="yes"
+		["fds"]="yes"
+		["gb"]="no"
+		["gbc"]="no"
+		["gba"]="no"
+		["genesis"]="no"
+		["gg"]="no"
+		["jaguar"]="no"
+		["megacd"]="yes"
+		["n64"]="no"
+		["neogeo"]="no"
+		["neogeocd"]="yes"
+		["nes"]="no"
+		["s32x"]="no"
+		["saturn"]="yes"
+		["sgb"]="no"
+		["sms"]="no"
+        ["snes"]="no"
+        ["stv"]="no"
+        ["tgfx16"]="no"
+        ["tgfx16cd"]="yes"
+        ["psx"]="no"
+        ["vectrex"]="no"
+        ["wonderswan"]="no"
+        ["wonderswancolor"]="no"
+        ["x68k"]="no"
+        ["mgls"]="no"
 	)
 	
 
@@ -1168,10 +1168,10 @@ function update_samini() {
 
 
 function parse_cmd() {
-  # 1) No args ⇒ show the pre-menu
+  # 1) no args ⇒ show the pre-menu
   (( $# == 0 )) && { sam_premenu; return; }
 
-  # 2) Normalize
+  # 2) normalize
   local first="${1,,}"
   shift
 
@@ -1388,13 +1388,13 @@ function loop_core() { # loop_core (optional_core_name)
 				first_core_launched=1      # Set the flag so this only runs once.
 			fi
 			
-			# Now, we start the countdown timer before the next game.
+			# now, we start the countdown timer before the next game.
 			run_countdown_timer
 		else
 			# We immediately loop again to try the next core without waiting.
 			echo "Core launch failed."
 			# Blacklist the core and bail out of this launch attempt.
-			echo "ERROR: Failed ${romloadfails} times. No valid game found for core: ${nextcore}"
+			echo "ERROR: Failed ${romloadfails} times. no valid game found for core: ${nextcore}"
 			echo "ERROR: Core ${nextcore} is blacklisted!"
 			delete_from_corelist "${nextcore}"
 			echo "List of cores is now: ${corelist[*]}"
@@ -1426,7 +1426,7 @@ function run_countdown_timer() {
         ((counter--))
         
         # --- Activity Checks ---
-        # NOTE: This section could also be refactored into a helper function
+        # noTE: This section could also be refactored into a helper function
         # to make the countdown loop even cleaner.
         if [ -s "$mouse_activity_file" ] && [ "${listenmouse}" == "yes" ]; then
             echo "Mouse activity detected!"
@@ -1547,7 +1547,7 @@ function next_core() { # next_core (core)
 	fi
 	
     # Check if new roms got added
-    if [[ "$check_for_new_games" == "Yes" ]]; then
+    if [[ "$check_for_new_games" == "yes" ]]; then
             check_list_update ${nextcore}
     fi
 	
@@ -1577,7 +1577,7 @@ function next_core() { # next_core (core)
 
     # After the loop, check if we ever found a valid ROM.
     if [ "$rom_is_valid" = "false" ]; then
-        # All retries have been exhausted. No valid ROM was found.
+        # All retries have been exhausted. no valid ROM was found.
         return 1
     fi
 	
@@ -2068,7 +2068,7 @@ function build_mgl_list() {
            IFS=',' read -ra search_paths <<< "${mgls_dirs}"
            ;;
        *)
-           samdebug "No MGL search path defined for ${core_type}."
+           samdebug "no MGL search path defined for ${core_type}."
            return 1
            ;;
     esac
@@ -2080,7 +2080,7 @@ function build_mgl_list() {
 
     # If no valid search directories were found, create an empty list and exit
     if [ ${#existing_paths[@]} -eq 0 ]; then
-        samdebug "No valid MGL search directories found for ${core_type}."
+        samdebug "no valid MGL search directories found for ${core_type}."
         : > "${output_file}" # Create empty list to prevent retry loops
         return 0
     fi
@@ -2090,7 +2090,7 @@ function build_mgl_list() {
 
     # If the resulting list is empty, disable the core
     if [ ! -s "${output_file}" ]; then
-        samdebug "No .mgl files found for ${core_type}—disabling core."
+        samdebug "no .mgl files found for ${core_type}—disabling core."
         delete_from_corelist "${core_type}"
         delete_from_corelist "${core_type}" tmp
         return 1
@@ -2137,7 +2137,7 @@ function build_amiga_list() {
 
     # Verify that the final list is not empty
     if [ ! -s "${output_file}" ]; then
-        samdebug "No Amiga games or demos matched current selection (${amigaselect})."
+        samdebug "no Amiga games or demos matched current selection (${amigaselect})."
         return 1
     fi
 
@@ -2277,7 +2277,7 @@ function check_list() {
 
         # --- Validate BIOS was found ---
         if [[ -z "$m82_bios_path" ]]; then 
-            echo "Error: No suitable M82 BIOS found in your nes folder. The file should be named 'M82 Game[...].nes'"
+            echo "Error: no suitable M82 BIOS found in your nes folder. The file should be named 'M82 Game[...].nes'"
             exit 1
         fi
 
@@ -2352,14 +2352,14 @@ function create_all_gamelists() {
 
 function schedule_gamelist_updates() {
         local core
-		[[ "$check_for_new_games" != "Yes" ]] && return
+		[[ "$check_for_new_games" != "yes" ]] && return
         for core in ${corelist//,/ }; do
                 check_list_update "$core"
         done
 }
 
 function check_list_update() {
-    [[ "$check_for_new_games" != "Yes" ]] && return
+    [[ "$check_for_new_games" != "yes" ]] && return
     local core="$1"
     local orig="${gamelistpath}/${core}_gamelist.txt"
     local compdir="${gamelistpathtmp}/comp"
@@ -2387,7 +2387,7 @@ function check_list_update() {
 		
 		ensure_list "$core" "$compdir"
 		
-		# Now, compare the sorted original list with the new sorted comparison list
+		# now, compare the sorted original list with the new sorted comparison list
 		if ! diff -q <(sort "$orig") <(sort "$comp") &>/dev/null; then
 			samdebug "[${core}] Gamelist has changed, updating master list…"
 		
@@ -2400,7 +2400,7 @@ function check_list_update() {
 			sort "$comp" -o "$orig"
 			samdebug "[${core}] Gamelist updated."
 		else
-			samdebug "[${core}] No changes detected in ${core} gamelist."
+			samdebug "[${core}] no changes detected in ${core} gamelist."
 		fi
     ) &
 }
@@ -2512,7 +2512,7 @@ function pick_random_game() {
 
         # If filtering resulted in an empty list, we must exit.
         if [ ! -s "${session_list}" ]; then
-            samdebug "Warning: Filters for '${core_type}' produced an empty list. No games to play." >&2
+            samdebug "Warning: Filters for '${core_type}' produced an empty list. no games to play." >&2
             return 1
         fi
     fi
@@ -2601,7 +2601,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
            fi
 
            if [[ "$mgl_check_status_ao486" != "pass" ]]; then
-               echo "ERROR - No ao486 MGL files found. Please install the 0Mhz collection." >&2
+               echo "ERROR - no ao486 MGL files found. Please install the 0Mhz collection." >&2
                delete_from_corelist "ao486"
                return 1
            fi
@@ -2633,7 +2633,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             fi
 
             if [[ "$mgl_check_status_x68k" != "pass" ]]; then
-                echo "ERROR - No x68k MGL files found. Please install the neon68k collection." >&2
+                echo "ERROR - no x68k MGL files found. Please install the neon68k collection." >&2
                 delete_from_corelist "x68k"
                 return 1
             fi
@@ -3538,11 +3538,11 @@ function check_zips() { # check_zips core
                         if [[ "${result}" ]]; then
                                 samdebug "Found new zip file[s]: ${result##*/}"
                                 build_gamelist "${1}"
-                                force_zip_scan="No"
+                                force_zip_scan="no"
                                 return
                         fi
                 fi
-                force_zip_scan="No"
+                force_zip_scan="no"
         fi
 	fi
 	#samdebug "Done."
@@ -3629,7 +3629,7 @@ function filter_list() { # args: core
             mv -f "${tmpfile}.filtered" "${tmpfile}"
         fi
 	else 
-		 echo -n "No blacklist filter found for '${core}'... " >&2
+		 echo -n "no blacklist filter found for '${core}'... " >&2
     fi
 
     cp -f "${tmpfile}" "${session_list}"
@@ -3671,7 +3671,7 @@ function apply_ratings_filter() {
 			# $1 is the core name
 			rated_file="${mrsampath}/SAM_Rated/${1}_mature.txt"
 			if [[ ! -f "$rated_file" ]]; then
-			  samdebug "No ${1}_mature.txt found—skipping mature filter."
+			  samdebug "no ${1}_mature.txt found—skipping mature filter."
 			else
 			  # load your mature names
 			  mapfile -t rated_list <"$rated_file"
@@ -3969,7 +3969,7 @@ function misterini_mod() {
         mv "$temp_file" "$ini_file"
         echo "MiSTer.ini updated successfully."
     else
-        echo "MiSTer.ini already has the correct settings. No update needed."
+        echo "MiSTer.ini already has the correct settings. no update needed."
         rm "$temp_file"
     fi
 }
@@ -3979,14 +3979,14 @@ function misterini_mod() {
 function misterini_restore() {
     # Only perform restore if sv_inibackup is set to "yes"
     if [ "$sv_inibackup" != "yes" ]; then
-        echo "MiSTer.ini restore is disabled (sv_inibackup is not 'yes'). No changes made."
+        echo "MiSTer.ini restore is disabled (sv_inibackup is not 'yes'). no changes made."
         return 0
     fi
 
     echo "Attempting to restore MiSTer.ini from backup..."
 
     if [ ! -f "$sv_inibackup_file" ]; then
-        echo "No backup file found at $sv_inibackup_file. Nothing to restore."
+        echo "no backup file found at $sv_inibackup_file. nothing to restore."
         return 1
     fi
 
@@ -4276,7 +4276,7 @@ function samvideo_play() {
 		nice -n -20 env LD_LIBRARY_PATH=${mrsampath} ${mrsampath}/mplayer -msglevel all=0:statusline=5 "${options}" "$tmpvideo" 2>/dev/null 
 		rm "$sv_gametimer_file" 2>/dev/null
 	else
-		echo "No video was downloaded. Skipping video playback.."
+		echo "no video was downloaded. Skipping video playback.."
 		echo "1" > "$sv_gametimer_file"
 		return
 	fi
@@ -4327,7 +4327,7 @@ function check_and_update() {
 
     # Compare sizes and update if needed
     if [ "$remote_size" -eq "$local_size" ]; then
-        echo "$description is up-to-date. No update required."
+        echo "$description is up-to-date. no update required."
         return 0  # File is up-to-date
     else
         echo "Updating $description..."
@@ -4559,7 +4559,7 @@ function sam_update() { # sam_update (next command)
 	if ping -4 -q -w 1 -c 1 github.com > /dev/null; then 
 		echo " Connection established"
 	else
-		echo "No connection to Github. Please use offline install."
+		echo "no connection to Github. Please use offline install."
 		sleep 5
 		#exit 1
 	fi
@@ -4595,7 +4595,7 @@ function sam_update() { # sam_update (next command)
 		else
 			# /tmp/MiSTer_SAM_on.sh isn't there!
 			echo " SAM update FAILED"
-			echo " No Internet?"
+			echo " no Internet?"
 			exit 1
 		fi
 	else # We're running from /tmp - download dependencies and proceed
@@ -4665,7 +4665,7 @@ init_paths
 
 init_data
 
-if [[ "$update_gamelists_during_play" == "Yes" ]]; then
+if [[ "$update_gamelists_during_play" == "yes" ]]; then
         schedule_gamelist_updates
 fi
 
