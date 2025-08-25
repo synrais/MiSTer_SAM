@@ -1052,8 +1052,9 @@ function run_countdown_timer() {
         if [[ "$skip_black_screens" == "yes" || "$skip_static_screens" == "yes" ]]; then
             if [[ -n "$scaler_info_fd" ]]; then
                 local chunk
-                while IFS= read -r -t 0 -u "$scaler_info_fd" -d $'\r' chunk; do
-                    scaler_info_last="$chunk"
+                while IFS= read -r -t 0 -u "$scaler_info_fd" chunk; do
+                    scaler_info_last+="$chunk"
+                    scaler_info_last="${scaler_info_last##*$'\r'}"
                 done
             fi
             local sinfo="$scaler_info_last"
