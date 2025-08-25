@@ -41,7 +41,7 @@ function init_vars() {
 	declare -g sampid="${$}"
 	declare -g samprocess
 	samprocess="$(basename -- "${0}")"
-	declare -g menuonly="Yes"
+	declare -g menuonly="yes"
 	declare -g key_activity_file="/tmp/.SAM_tmp/SAM_Keyboard_Activity"
 	declare -g joy_activity_file="/tmp/.SAM_tmp/SAM_Joy_Activity"
 	declare -g mouse_activity_file="/tmp/.SAM_tmp/SAM_Mouse_Activity"
@@ -66,26 +66,26 @@ function init_vars() {
 	declare -gi gametimer=120
 	declare -gl corelist="amiga,amigacd32,ao486,arcade,atari2600,atari5200,atari7800,atarilynx,c64,cdi,coco2,colecovision,intellivision,fds,gb,gbc,gba,genesis,gg,jaguar,megacd,n64,neogeo,neogeocd,nes,s32x,saturn,sgb,sms,snes,stv,tgfx16,tgfx16cd,vectrex,wonderswan,wonderswancolor,psx,x68k,mgls"
 	declare -gl corelistall="${corelist}"
-	declare -gl skipmessage="Yes"
+	declare -gl skipmessage="yes"
 	declare -gl disablebootrom="no"
 	declare -gl skiptime="10"
-	declare -gl norepeat="Yes"
-	declare -gl disable_blacklist="No"
+	declare -gl norepeat="yes"
+	declare -gl disable_blacklist="no"
 	declare -gl amigaselect="All"
 	declare -gl m82="no"
 	declare -gl sam_goat_list="no"
-	declare -gl mute="No"
+	declare -gl mute="no"
 	declare -gi update_done=0
 	declare -gl ignore_when_skip="no"
-	declare -gl coreweight="No"
+	declare -gl coreweight="no"
 	declare -gi gamelists_created=0
-	declare -gl playcurrentgame="No"
-	declare -gl kids_safe="No"
-	declare -gl rating="No"
+	declare -gl playcurrentgame="no"
+	declare -gl kids_safe="no"
+	declare -gl rating="no"
 	declare -gl dupe_mode="normal"
-	declare -gl listenmouse="Yes"
-	declare -gl listenkeyboard="Yes"
-	declare -gl listenjoy="Yes"
+	declare -gl listenmouse="yes"
+	declare -gl listenkeyboard="yes"
+	declare -gl listenjoy="yes"
  	declare -gl mgls_dirs=""
 	declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
 	declare -g branch="main"
@@ -95,26 +95,26 @@ function init_vars() {
 	declare -gA corep
 	declare -g userstartup="/media/fat/linux/user-startup.sh"
 	declare -g userstartuptpl="/media/fat/linux/_user-startup.sh"
-	declare -gl useneogeotitles="Yes"
+	declare -gl useneogeotitles="yes"
 	declare -gl arcadeorient
-	declare -gl checkzipsondisk="No"
- 	declare -gl force_zip_scan="No"
-  	declare -gl check_for_new_games="Yes"
-    declare -gl update_gamelists_during_play="No"
+	declare -gl checkzipsondisk="no"
+ 	declare -gl force_zip_scan="no"
+  	declare -gl check_for_new_games="yes"
+    declare -gl update_gamelists_during_play="no"
 	declare -gi bootsleep="60"
 	declare -gi totalgamecount		
 	# ======== DEBUG VARIABLES ========
-	declare -gl samdebug="No"
-	declare -gl samdebuglog="No"						
+	declare -gl samdebug="no"
+	declare -gl samdebuglog="no"						
 	# ======== BGM =======
-	declare -gl bgm="No"
-	declare -gl bgmplay="Yes"
-	declare -gl bgmstop="Yes"
+	declare -gl bgm="no"
+	declare -gl bgmplay="yes"
+	declare -gl bgmstop="yes"
 	declare -gi gvoladjust="0"
 	
 	# ======== TTY2OLED =======
 	declare -g TTY_cmd_pipe="${mrsamtmp}/TTY_cmd_pipe"
-	declare -gl ttyenable="No"
+	declare -gl ttyenable="no"
 	declare -gi ttyupdate_pause=10
 	declare -g tty_currentinfo_file=${mrsamtmp}/tty_currentinfo
 	declare -g tty_sleepfile="/tmp/tty2oled_sleep"
@@ -423,45 +423,45 @@ function init_data() {
 
 	# Can this core skip Bios/Safety warning messages
 	declare -glA CORE_SKIP=(
-		["amiga"]="No"
-		["amigacd32"]="Yes"
-		["ao486"]="No"
-		["arcade"]="No"
-		["atari2600"]="No"
-		["atari5200"]="No"
-		["atari7800"]="No"
-		["atarilynx"]="No"		
-		["c64"]="No"
-		["cdi"]="No"
-		["coco2"]="No"
-  		["colecovision"]="No"
-		["intellivision"]="Yes"
-		["fds"]="Yes"
-		["gb"]="No"
-		["gbc"]="No"
-		["gba"]="No"
-		["genesis"]="No"
-		["gg"]="No"
-		["jaguar"]="No"
-		["megacd"]="Yes"
-		["n64"]="No"
-		["neogeo"]="No"
-		["neogeocd"]="Yes"
-		["nes"]="No"
-		["s32x"]="No"
-		["saturn"]="Yes"
-		["sgb"]="No"
-		["sms"]="No"
-        ["snes"]="No"
-        ["stv"]="No"
-        ["tgfx16"]="No"
-        ["tgfx16cd"]="Yes"
-        ["psx"]="No"
-        ["vectrex"]="No"
-        ["wonderswan"]="No"
-        ["wonderswancolor"]="No"
-        ["x68k"]="No"
-        ["mgls"]="No"
+		["amiga"]="no"
+		["amigacd32"]="yes"
+		["ao486"]="no"
+		["arcade"]="no"
+		["atari2600"]="no"
+		["atari5200"]="no"
+		["atari7800"]="no"
+		["atarilynx"]="no"		
+		["c64"]="no"
+		["cdi"]="no"
+		["coco2"]="no"
+  		["colecovision"]="no"
+		["intellivision"]="yes"
+		["fds"]="yes"
+		["gb"]="no"
+		["gbc"]="no"
+		["gba"]="no"
+		["genesis"]="no"
+		["gg"]="no"
+		["jaguar"]="no"
+		["megacd"]="yes"
+		["n64"]="no"
+		["neogeo"]="no"
+		["neogeocd"]="yes"
+		["nes"]="no"
+		["s32x"]="no"
+		["saturn"]="yes"
+		["sgb"]="no"
+		["sms"]="no"
+        ["snes"]="no"
+        ["stv"]="no"
+        ["tgfx16"]="no"
+        ["tgfx16cd"]="yes"
+        ["psx"]="no"
+        ["vectrex"]="no"
+        ["wonderswan"]="no"
+        ["wonderswancolor"]="no"
+        ["x68k"]="no"
+        ["mgls"]="no"
 	)
 	
 
@@ -1547,7 +1547,7 @@ function next_core() { # next_core (core)
 	fi
 	
     # Check if new roms got added
-    if [[ "$check_for_new_games" == "Yes" ]]; then
+    if [[ "$check_for_new_games" == "yes" ]]; then
             check_list_update ${nextcore}
     fi
 	
@@ -2352,14 +2352,14 @@ function create_all_gamelists() {
 
 function schedule_gamelist_updates() {
         local core
-		[[ "$check_for_new_games" != "Yes" ]] && return
+		[[ "$check_for_new_games" != "yes" ]] && return
         for core in ${corelist//,/ }; do
                 check_list_update "$core"
         done
 }
 
 function check_list_update() {
-    [[ "$check_for_new_games" != "Yes" ]] && return
+    [[ "$check_for_new_games" != "yes" ]] && return
     local core="$1"
     local orig="${gamelistpath}/${core}_gamelist.txt"
     local compdir="${gamelistpathtmp}/comp"
@@ -3538,11 +3538,11 @@ function check_zips() { # check_zips core
                         if [[ "${result}" ]]; then
                                 samdebug "Found new zip file[s]: ${result##*/}"
                                 build_gamelist "${1}"
-                                force_zip_scan="No"
+                                force_zip_scan="no"
                                 return
                         fi
                 fi
-                force_zip_scan="No"
+                force_zip_scan="no"
         fi
 	fi
 	#samdebug "Done."
@@ -4665,7 +4665,7 @@ init_paths
 
 init_data
 
-if [[ "$update_gamelists_during_play" == "Yes" ]]; then
+if [[ "$update_gamelists_during_play" == "yes" ]]; then
         schedule_gamelist_updates
 fi
 
