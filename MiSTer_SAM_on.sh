@@ -107,8 +107,14 @@ function init_vars() {
 	declare -g core_count_file="/tmp/.SAM_tmp/sv_corecount"	
 	declare -gi disablecoredel="0"	
 	declare -gi gametimer=120
-	declare -gl corelist="amiga,amigacd32,ao486,arcade,atari2600,atari5200,atari7800,atarilynx,c64,cdi,coco2,colecovision,intellivision,fds,gb,gbc,gba,genesis,gg,jaguar,megacd,n64,neogeo,neogeocd,nes,s32x,saturn,sgb,sms,snes,stv,tgfx16,tgfx16cd,vectrex,wonderswan,wonderswancolor,psx,x68k,mgls"
-	declare -gl corelistall="${corelist}"
+     # Build default core lists from CORE_DATA
+    local _corelist=""
+    for entry in "${CORE_DATA[@]}"; do
+            IFS='|' read -r _name _ <<< "${entry}"
+            _corelist+="${_corelist:+,}${_name}"
+    done
+    declare -gl corelist="${_corelist}"
+    declare -gl corelistall="${corelist}"
 	declare -gl skipmessage="Yes"
 	declare -gl disablebootrom="no"
 	declare -gl norepeat="Yes"
