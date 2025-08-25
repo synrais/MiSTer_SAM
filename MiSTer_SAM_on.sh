@@ -3147,15 +3147,24 @@ function filter_list() { # args: core
         done
     fi
 
-    if [ "${disable_blacklist}" == "no" ] && [ -f "${gamelistpath}/${core}_blacklist.txt" ]; then
-        echo -n "Applying static screen blacklist for '${core}'... " >&2
-        awk "BEGIN{while(getline<\"${gamelistpath}/${core}_blacklist.txt\"){a[\$0]=1}} {gamelistfile=\$0;sub(/\\.[^.]*\$/,\"\",gamelistfile);sub(/^.*\\//,\"\",gamelistfile);if(!(gamelistfile in a))print}" \
-        "${tmpfile}" > "${tmpfile}.filtered"
-        if [ -s "${tmpfile}.filtered" ]; then
-            mv -f "${tmpfile}.filtered" "${tmpfile}"
+    if [ "${disable_blacklist}" == "no" ] && [[ -n "${CORE_BLACKLIST[$core]}" ]]; then
+        local applied=0
+        for bfile in ${CORE_BLACKLIST[$core]}; do
+            if [ -f "${gamelistpath}/$bfile" ]; then
+                echo -n "Applying static screen blacklist for '${core}' ($bfile)... " >&2
+                awk "BEGIN{while(getline<\"${gamelistpath}/$bfile\"){a[\$0]=1}} {gamelistfile=\$0;sub(/\\.[^.]*\$/,\"\",gamelistfile);sub(/^.*\\//,\"\",gamelistfile);if(!(gamelistfile in a))print}" \
+                "${tmpfile}" > "${tmpfile}.filtered"
+                if [ -s "${tmpfile}.filtered" ]; then
+                    mv -f "${tmpfile}.filtered" "${tmpfile}"
+                fi
+                applied=1
+            fi
+        done
+        if [ "$applied" -eq 0 ]; then
+            echo -n "No blacklist filter found for '${core}'... " >&2
         fi
-	else 
-		 echo -n "No blacklist filter found for '${core}'... " >&2
+    else
+        echo -n "No blacklist filter found for '${core}'... " >&2
     fi
 
     cp -f "${tmpfile}" "${session_list}"
@@ -3174,79 +3183,77 @@ function filter_list() { # args: core
 
 # Helper function for the ratings filter.
 function apply_ratings_filter() {
-    local core=${1}
-    local target_file=${2} # Pass the file to modify ($tmpfile)
-		echo "Ratings Mode ${rating} active - Filtering Roms..."	
-		if [ "${rating}" == "kids" ]; then
-				if [ ${1} == amiga ]; then
-					fgrep -f "${mrsampath}/SAM_Rated/amiga_rated.txt" <(fgrep -v "Demo:" "${gamelistpath}/amiga_gamelist.txt") | awk -F'(' '!seen[$1]++ {print $0}' > "${tmpfilefilter}"
-				else
-					fgrep -f "${mrsampath}/SAM_Rated/${1}_rated.txt" "${gamelistpathtmp}/${1}_gamelist.txt" | awk -F "/" '{split($NF,a," \\("); if (!seen[a[1]]++) print $0}' > "${tmpfilefilter}"
-				fi
-				if [ -s "${tmpfilefilter}" ]; then 
-					samdebug "$(wc -l <"${tmpfilefilter}") games after kids safe filter applied."
-					cp -f "${tmpfilefilter}" "${gamelistpathtmp}/${1}_gamelist.txt"
-				else
-					delete_from_corelist "${1}"
-					delete_from_corelist "${1}" tmp
-					echo "${1} kids safe filter produced no results and will be disabled."
-					echo "List of cores is now: ${corelist[*]}"
-					return 1
-				fi
-		else
-			# $1 is the core name
-			rated_file="${mrsampath}/SAM_Rated/${1}_mature.txt"
-			if [[ ! -f "$rated_file" ]]; then
-			  samdebug "No ${1}_mature.txt found—skipping mature filter."
-			else
-			  # load your mature names
-			  mapfile -t rated_list <"$rated_file"
-
-			  # prepare output file
-			  : >"$tmpfilefilter"
-
-			  # choose which gamelist to read (and strip Demos for amiga)
-			  if [[ "$1" == "amiga" ]]; then
-				gamelist_src="${gamelistpath}/amiga_gamelist.txt"
-				readarray -t games < <(grep -v '^Demo:' "$gamelist_src")
-			  else
-				gamelist_src="${gamelistpathtmp}/${1}_gamelist.txt"
-				readarray -t games < <(cat "$gamelist_src")
-			  fi
-
-			  declare -A seen
-			  for line in "${games[@]}"; do
-				# strip dir + extension
-				name="${line##*/}"
-				name="${name%.*}"
-				name_lc="${name,,}"
-
-				# loose substring match
-				for entry in "${rated_list[@]}"; do
-				  entry_lc="${entry,,}"
-				  if [[ "$name_lc" == *"$entry_lc"* ]]; then
-					if [[ -z "${seen[$name_lc]}" ]]; then
-					  seen[$name_lc]=1
-					  printf '%s\n' "$line" >>"$tmpfilefilter"
-					fi
-					break
-				  fi
-				done
-			  done
-
-			  if [[ -s "$tmpfilefilter" ]]; then
-				samdebug "$(wc -l <"$tmpfilefilter") games after mature filter applied."
-				cp -f "$tmpfilefilter" "${gamelistpathtmp}/${1}_gamelist.txt"
-			  else
-				delete_from_corelist "$1"
-				delete_from_corelist "$1" tmp
-				echo "${1} mature filter produced no results and will be disabled."
-				echo "List of cores is now: ${corelist[*]}"
-				return 1
-			  fi
-			fi
-
-		fi
+    local core=$1
+    local target_file=$2 # Pass the file to modify ($tmpfile)
+    echo "Ratings Mode ${rating} active - Filtering Roms..."
+    local rated_file=""
+    if [[ "$rating" == "kids" ]]; then
+        for f in ${CORE_RATED[$core]}; do
+            [[ $f == *_rated.txt ]] && { rated_file=$f; break; }
+        done
+        if [[ -z "$rated_file" ]]; then
+            samdebug "No rated list for ${core}—skipping kids filter."
+            return 0
+        fi
+        if [[ "$core" == "amiga" ]]; then
+            fgrep -f "${mrsampath}/SAM_Rated/$rated_file" <(fgrep -v "Demo:" "${gamelistpath}/amiga_gamelist.txt") | awk -F'(' '!seen[$1]++ {print $0}' > "${tmpfilefilter}"
+        else
+            fgrep -f "${mrsampath}/SAM_Rated/$rated_file" "${gamelistpathtmp}/${core}_gamelist.txt" | awk -F "/" '{split($NF,a," \\("); if (!seen[a[1]]++) print $0}' > "${tmpfilefilter}"
+        fi
+        if [ -s "${tmpfilefilter}" ]; then
+            samdebug "$(wc -l <"${tmpfilefilter}") games after kids safe filter applied."
+            cp -f "${tmpfilefilter}" "${gamelistpathtmp}/${core}_gamelist.txt"
+        else
+            delete_from_corelist "${core}"
+            delete_from_corelist "${core}" tmp
+            echo "${core} kids safe filter produced no results and will be disabled."
+            echo "List of cores is now: ${corelist[*]}"
+            return 1
+        fi
+    else
+        for f in ${CORE_RATED[$core]}; do
+            [[ $f == *_mature.txt ]] && { rated_file=$f; break; }
+        done
+        if [[ -z "$rated_file" ]] || [[ ! -f "${mrsampath}/SAM_Rated/$rated_file" ]]; then
+            samdebug "No ${core} mature list found—skipping mature filter."
+            return 0
+        fi
+        mapfile -t rated_list <"${mrsampath}/SAM_Rated/$rated_file"
+        : >"$tmpfilefilter"
+        if [[ "$core" == "amiga" ]]; then
+            gamelist_src="${gamelistpath}/amiga_gamelist.txt"
+            readarray -t games < <(grep -v '^Demo:' "$gamelist_src")
+        else
+            gamelist_src="${gamelistpathtmp}/${core}_gamelist.txt"
+            readarray -t games < <(cat "$gamelist_src")
+        fi
+        declare -A seen
+        for line in "${games[@]}"; do
+            name="${line##*/}"
+            name="${name%.*}"
+            name_lc="${name,,}"
+            for entry in "${rated_list[@]}"; do
+                entry_lc="${entry,,}"
+                if [[ "$name_lc" == *"$entry_lc"* ]]; then
+                    if [[ -z "${seen[$name_lc]}" ]]; then
+                        seen[$name_lc]=1
+                        printf '%s\n' "$line" >>"$tmpfilefilter"
+                    fi
+                    break
+                fi
+            done
+        done
+        if [[ -s "$tmpfilefilter" ]]; then
+            samdebug "$(wc -l <"$tmpfilefilter") games after mature filter applied."
+            cp -f "$tmpfilefilter" "${gamelistpathtmp}/${core}_gamelist.txt"
+        else
+            delete_from_corelist "$core"
+            delete_from_corelist "$core" tmp
+            echo "${core} mature filter produced no results and will be disabled."
+            echo "List of cores is now: ${corelist[*]}"
+            return 1
+        fi
+    fi
 }
 
 
