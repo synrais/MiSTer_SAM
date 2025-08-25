@@ -30,6 +30,102 @@
 # TODO implement playcurrentgame for amiga
 # SAM is immune to the signal sent when detaching from tmux
 trap '' SIGHUP
+# ======== CORE DEFINITIONS ========
+declare -A CORE_PRETTY CORE_EXT CORE_PATH_RBF CORE_LAUNCH TTY2OLED_PIC_NAME MGL_CORE MGL_SETNAME PATHFILTER MGL_TYPE CORE_RATED CORE_BLACKLIST
+declare -iA MGL_DELAY MGL_INDEX
+declare -a RATED_FILES BLACKLIST_FILES
+corelist_array=()
+
+register_core() {
+    local id="$1" pretty="$2" ext="$3" rbf="$4" launch="$5" tty="$6" mgl_core="$7" mgl_setname="$8" mgl_delay="$9" mgl_index="${10}" mgl_type="${11}" rated="${12}" blacklist="${13}"
+    CORE_PRETTY[$id]="$pretty"
+    CORE_EXT[$id]="$ext"
+    CORE_PATH_RBF[$id]="$rbf"
+    CORE_LAUNCH[$id]="$launch"
+    TTY2OLED_PIC_NAME[$id]="$tty"
+    MGL_CORE[$id]="$mgl_core"
+    [[ -n "$mgl_setname" ]] && MGL_SETNAME[$id]="$mgl_setname"
+    MGL_DELAY[$id]="$mgl_delay"
+    MGL_INDEX[$id]="$mgl_index"
+    MGL_TYPE[$id]="$mgl_type"
+    PATHFILTER[$id]="${id}pathfilter"
+    if [[ -n "$rated" ]]; then
+        CORE_RATED[$id]="$rated"
+        for f in $rated; do
+            RATED_FILES+=("$f")
+        done
+    fi
+    if [[ -n "$blacklist" ]]; then
+        CORE_BLACKLIST[$id]="$blacklist"
+        for f in $blacklist; do
+            BLACKLIST_FILES+=("$f")
+        done
+    fi
+    corelist_array+=("$id")
+}
+# Core registration (case sensitive)
+#   id         : short identifier for the core
+#   pretty     : human-readable system name
+#   ext        : comma-separated list of ROM extensions (no dots)
+#   rbf_path   : MiSTer folder containing the core's .rbf (e.g. _Console)
+#   launch     : rbf name used when launching the core not includeing the _XXXXXXXX
+#   tty_pic    : tty2oled picture name
+#   mgl_core   : rbf file name used in generated MGL files
+#   mgl_setname: optional setname for MGL (blank if unused)
+#   mgl_delay  : delay attribute for the MGL <file> entry
+#   mgl_index  : index attribute for the MGL <file> entry
+#   mgl_type   : type attribute for the MGL <file> entry
+#   rated      : rated.txt filename
+#   blacklist  : blacklist.txt filename
+# <id> <pretty> <ext> <rbf_path> <launch> <tty_pic> <mgl_core> <mgl_setname> <mgl_delay> <mgl_index> <mgl_type> <rated> <blacklist>
+register_core "amiga" "Commodore Amiga" "" "_Computer" "Minimig" "Minimig" "Minimig" "" 1 0 "f" "amiga_rated.txt" "amiga_blacklist.txt"
+register_core "amigacd32" "Commodore Amiga CD32" "chd,cue" "_Computer" "Minimig" "Minimig" "Minimig" "AmigaCD32" 1 0 "f" "" ""
+register_core "ao486" "PC 486 DX-100" "mgl" "_Computer" "ao486" "ao486" "ao486" "" 0 2 "s" "ao486_rated.txt" ""
+register_core "arcade" "MiSTer Arcade" "mra" "_Arcade" "Arcade" "Arcade" "Arcade" "" 2 0 "f" "arcade_rated.txt" "arcade_blacklist.txt"
+register_core "atari2600" "Atari 2600" "a26" "_Console" "ATARI7800" "ATARI2600" "ATARI7800" "" 1 0 "f" "" ""
+register_core "atari5200" "Atari 5200" "a52,car" "_Console" "ATARI5200" "ATARI5200" "ATARI5200" "" 1 1 "f" "" ""
+register_core "atari7800" "Atari 7800" "a78" "_Console" "ATARI7800" "ATARI7800" "ATARI7800" "" 1 1 "f" "" ""
+register_core "atarilynx" "Atari Lynx" "lnx" "_Console" "AtariLynx" "AtariLynx" "AtariLynx" "" 1 1 "f" "" ""
+register_core "c64" "Commodore 64" "crt,prg" "_Computer" "C64" "C64" "C64" "" 1 1 "f" "" ""
+register_core "cdi" "Philips CD-i" "chd,cue" "_Console" "CDi" "CD-i" "CDi" "" 1 1 "s" "" ""
+register_core "coco2" "TRS-80 Color Computer 2" "ccc" "_Computer" "CoCo2" "CoCo2" "CoCo2" "" 1 1 "f" "" ""
+register_core "colecovision" "ColecoVision" "col" "_Console" "ColecoVision" "ColecoVision" "ColecoVision" "" 1 1 "f" "" ""
+register_core "fds" "Nintendo Disk System" "fds" "_Console" "NES" "fds" "NES" "" 2 0 "f" "fds_rated.txt" "fds_blacklist.txt"
+register_core "gb" "Nintendo Game Boy" "gb" "_Console" "GAMEBOY" "GAMEBOY" "GAMEBOY" "" 2 0 "f" "gb_rated.txt" ""
+register_core "gba" "Nintendo Game Boy Advance" "gba" "_Console" "GBA" "GBA" "GBA" "" 2 0 "f" "gba_rated.txt" "gba_blacklist.txt"
+register_core "gbc" "Nintendo Game Boy Color" "gbc" "_Console" "GAMEBOY" "GAMEBOY" "GAMEBOY" "GBC" 2 0 "f" "gbc_rated.txt" ""
+register_core "genesis" "Sega Genesis / Megadrive" "md,gen" "_Console" "MEGADRIVE" "MegaDrive" "MegaDrive" "" 1 0 "f" "genesis_rated.txt" "genesis_blacklist.txt"
+register_core "gg" "Sega Game Gear" "gg" "_Console" "SMS" "gamegear" "SMS" "GameGear" 1 2 "f" "gg_rated.txt" ""
+register_core "intellivision" "Mattel Intellivision" "int,bin,rom" "_Console" "Intellivision" "Intellivision" "Intellivision" "" 1 1 "f" "" ""
+register_core "jaguar" "Atari Jaguar" "j64,rom,bin,jag" "_Console" "Jaguar" "Jaguar" "Jaguar" "" 1 1 "f" "" ""
+register_core "megacd" "Sega CD / Mega CD" "chd,cue" "_Console" "MegaCD" "MegaCD" "MegaCD" "" 1 0 "s" "megacd_rated.txt" "megacd_blacklist.txt"
+register_core "mgls" "Custom MGL" "mgl" "" "MGL" "MGL" "" "" 1 0 "f" "" ""
+register_core "n64" "Nintendo N64" "n64,z64" "_Console" "N64" "N64" "N64" "" 1 1 "f" "n64_rated.txt n64_mature.txt" "n64_blacklist.txt"
+register_core "neogeo" "SNK NeoGeo" "neo" "_Console" "NEOGEO" "NEOGEO" "NEOGEO" "" 1 1 "f" "neogeo_rated.txt" "neogeo_blacklist.txt"
+register_core "neogeocd" "SNK NeoGeo CD" "cue,chd" "_Console" "NEOGEO" "NEOGEO" "NEOGEO" "" 1 1 "s" "" ""
+register_core "nes" "Nintendo Entertainment System" "nes" "_Console" "NES" "NES" "NES" "" 2 0 "f" "nes_rated.txt" "nes_blacklist.txt"
+register_core "psx" "Sony Playstation" "chd,cue,exe" "_Console" "PSX" "PSX" "PSX" "" 1 1 "s" "psx_rated.txt" "psx_blacklist.txt"
+register_core "s32x" "Sega 32x" "32x" "_Console" "S32X" "S32X" "S32X" "" 1 0 "f" "" "s32x_blacklist.txt"
+register_core "saturn" "Sega Saturn" "cue,chd" "_Console" "SATURN" "SATURN" "SATURN" "" 1 1 "s" "saturn_rated.txt saturn_mature.txt" ""
+register_core "sgb" "Super Gameboy" "gb,gbc" "_Console" "SGB" "SGB" "SGB" "" 1 1 "f" "" ""
+register_core "sms" "Sega Master System" "sms,sg" "_Console" "SMS" "SMS" "SMS" "" 1 1 "f" "sms_rated.txt" "sms_blacklist.txt"
+register_core "snes" "Super Nintendo" "sfc,smc" "_Console" "SNES" "SNES" "SNES" "" 2 0 "f" "snes_rated.txt" "snes_blacklist.txt"
+register_core "stv" "Sega Titan Video" "" "_Arcade" "S-TV" "S-TV" "S-TV" "" 2 0 "f" "" ""
+register_core "tgfx16" "NEC TurboGrafx-16 " "pce,sgx" "_Console" "TGFX16" "TGFX16" "TurboGrafx16" "" 1 1 "f" "tgfx16_rated.txt" "tgfx16_blacklist.txt"
+register_core "tgfx16cd" "NEC TurboGrafx-16 CD" "chd,cue" "_Console" "TGFX16" "TGFX16" "TurboGrafx16" "" 1 0 "s" "tgfx16cd_rated.txt tgfx16cd_mature.txt" "tgfx16cd_blacklist.txt"
+register_core "vectrex" "GCE Vectrex" "bin" "_Console" "Vectrex" "Vectrex" "Vectrex" "" 1 1 "f" "" ""
+register_core "wonderswan" "Bandai WonderSwan" "ws" "_Console" "WonderSwan" "WonderSwan" "WonderSwan" "" 1 1 "f" "" ""
+register_core "wonderswancolor" "Bandai WonderSwan Color" "wsc" "_Console" "WonderSwan" "WonderSwan" "WonderSwan" "WonderSwanColor" 1 1 "f" "" ""
+register_core "x68k" "Sharp X68000" "mgl" "_Computer" "X68000" "X68000" "X68000" "" 1 2 "s" "" ""
+
+DEFAULT_CORELIST=$(IFS=,; echo "${corelist_array[*]}")
+
+update_pathfilters() {
+    for core in "${!PATHFILTER[@]}"; do
+        local var="${PATHFILTER[$core]}"
+        PATHFILTER[$core]="${!var}"
+    done
+}
 
 # ======== INI VARIABLES ========
 # Change these in the INI file
@@ -41,7 +137,7 @@ function init_vars() {
 	declare -g sampid="${$}"
 	declare -g samprocess
 	samprocess="$(basename -- "${0}")"
-	declare -g menuonly="yes"
+	declare -g menuonly="Yes"
 	declare -g key_activity_file="/tmp/.SAM_tmp/SAM_Keyboard_Activity"
 	declare -g joy_activity_file="/tmp/.SAM_tmp/SAM_Joy_Activity"
 	declare -g mouse_activity_file="/tmp/.SAM_tmp/SAM_Mouse_Activity"
@@ -60,61 +156,73 @@ function init_vars() {
 	declare -g tmpfile="/tmp/.SAM_List/tmpfile"
 	declare -g tmpfile2="/tmp/.SAM_List/tmpfile2"
 	declare -g tmpfilefilter="/tmp/.SAM_List/tmpfilefilter"
-	declare -g corelistfile="/tmp/.SAM_List/corelist"
-	declare -g core_count_file="/tmp/.SAM_tmp/sv_corecount"	
-	declare -gi disablecoredel="0"	
-	declare -gi gametimer=120
-	declare -gl corelist="amiga,amigacd32,ao486,arcade,atari2600,atari5200,atari7800,atarilynx,c64,cdi,coco2,colecovision,intellivision,fds,gb,gbc,gba,genesis,gg,jaguar,megacd,n64,neogeo,neogeocd,nes,s32x,saturn,sgb,sms,snes,stv,tgfx16,tgfx16cd,vectrex,wonderswan,wonderswancolor,psx,x68k,mgls"
-	declare -gl corelistall="${corelist}"
-	declare -gl skipmessage="yes"
+    declare -g corelistfile="/tmp/.SAM_List/corelist"
+    declare -g core_count_file="/tmp/.SAM_tmp/sv_corecount"
+    declare -gi disablecoredel="0"
+    declare -gi gametimer=120
+    declare -gl corelist="${DEFAULT_CORELIST}"
+    declare -gl corelistall="${DEFAULT_CORELIST}"
+	declare -gl skipmessage="Yes"
 	declare -gl disablebootrom="no"
-	declare -gl skiptime="10"
-	declare -gl norepeat="yes"
-	declare -gl disable_blacklist="no"
+	declare -gl norepeat="Yes"
+	declare -gl disable_blacklist="No"
 	declare -gl amigaselect="All"
 	declare -gl m82="no"
 	declare -gl sam_goat_list="no"
-	declare -gl mute="no"
+	declare -gl mute="No"
 	declare -gi update_done=0
 	declare -gl ignore_when_skip="no"
-	declare -gl coreweight="no"
+	declare -gl coreweight="No"
 	declare -gi gamelists_created=0
-	declare -gl playcurrentgame="no"
-	declare -gl kids_safe="no"
-	declare -gl rating="no"
+	declare -gl playcurrentgame="No"
+	declare -gl kids_safe="No"
+	declare -gl rating="No"
 	declare -gl dupe_mode="normal"
-	declare -gl listenmouse="yes"
-	declare -gl listenkeyboard="yes"
-	declare -gl listenjoy="yes"
- 	declare -gl mgls_dirs=""
-	declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
-	declare -g branch="main"
-	declare -g raw_base="https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/${branch}"
-	declare -gi counter=0
-	declare -gA corewc
+	declare -gl listenmouse="Yes"
+    declare -gl listenkeyboard="Yes"
+    declare -gl listenjoy="Yes"
+    declare -gl mgls_dirs=""
+    # ======== SCREEN CHECK OPTIONS =======
+    declare -gl skip_black_screens="no"
+    declare -g black_screen_time=5
+    declare -gl black_screen_close="no"
+    declare -gl black_screen_add="yes"
+    declare -gl skip_static_screens="no"
+    declare -g static_screen_time=10
+    declare -gl static_screen_add="no"
+    declare -gA SCALER_DELAY=()
+    declare -g scaler_info_pid=""
+    declare -g scaler_info_path="${mrsampath}/scaler_info"
+    declare -g scaler_log="${mrsamtmp}/scaler_info.log"
+    declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
+    declare -g branch="main"
+    declare -g raw_base="https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/${branch}"
+    declare -gi counter=0
+    declare -gA corewc
 	declare -gA corep
+    declare -gA CORE_AUTO_INPUTS=()
 	declare -g userstartup="/media/fat/linux/user-startup.sh"
 	declare -g userstartuptpl="/media/fat/linux/_user-startup.sh"
-	declare -gl useneogeotitles="yes"
+	declare -gl useneogeotitles="Yes"
 	declare -gl arcadeorient
-	declare -gl checkzipsondisk="no"
- 	declare -gl force_zip_scan="no"
-  	declare -gl check_for_new_games="yes"
-    declare -gl update_gamelists_during_play="no"
+	declare -gl checkzipsondisk="No"
+ 	declare -gl force_zip_scan="No"
+  	declare -gl check_for_new_games="Yes"
+    declare -gl update_gamelists_during_play="No"
 	declare -gi bootsleep="60"
 	declare -gi totalgamecount		
 	# ======== DEBUG VARIABLES ========
-	declare -gl samdebug="no"
-	declare -gl samdebuglog="no"						
+	declare -gl samdebug="No"
+	declare -gl samdebuglog="No"						
 	# ======== BGM =======
-	declare -gl bgm="no"
-	declare -gl bgmplay="yes"
-	declare -gl bgmstop="yes"
+	declare -gl bgm="No"
+	declare -gl bgmplay="Yes"
+	declare -gl bgmstop="Yes"
 	declare -gi gvoladjust="0"
 	
 	# ======== TTY2OLED =======
 	declare -g TTY_cmd_pipe="${mrsamtmp}/TTY_cmd_pipe"
-	declare -gl ttyenable="no"
+	declare -gl ttyenable="No"
 	declare -gi ttyupdate_pause=10
 	declare -g tty_currentinfo_file=${mrsamtmp}/tty_currentinfo
 	declare -g tty_sleepfile="/tmp/tty2oled_sleep"
@@ -158,47 +266,6 @@ function init_vars() {
 	declare -g sv_youtube_crtlist="${mrsampath}/sv_yt240_list.txt"
 
 
-	# ======== CORE PATHS RBF ========
-	declare -g amigapathrbf="_Computer"
-	declare -g amigacd32pathrbf="_Computer"
-	declare -g arcadepathrbf="_Arcade"
-	declare -g ao486pathrbf="_Computer"
-	declare -g atari2600pathrbf="_Console"
-	declare -g atari5200pathrbf="_Console"
-	declare -g atari7800pathrbf="_Console"
-	declare -g atarilynxpathrbf="_Console"
-	declare -g c64pathrbf="_Computer"
-	declare -g cdipathrbf="_Console"	
-	declare -g coco2pathrbf="_Computer"
-	declare -g colecovisionpathrbf="_Console"
- 	declare -g intellivisionpathrbf="_Console"
-	declare -g fdspathrbf="_Console"
-	declare -g gbpathrbf="_Console"
-	declare -g gbcpathrbf="_Console"
-	declare -g gbapathrbf="_Console"
-	declare -g genesispathrbf="_Console"
-	declare -g ggpathrbf="_Console"
-	declare -g jaguarpathrbf="_Console"
-	declare -g megacdpathrbf="_Console"
-	declare -g n64pathrbf="_Console"
-	declare -g neogeopathrbf="_Console"
-	declare -g neogeocdpathrbf="_Console"
-	declare -g nespathrbf="_Console"
-	declare -g s32xpathrbf="_Console"
-	declare -g saturnpathrbf="_Console"
-	declare -g sgbpathrbf="_Console"
-	declare -g smspathrbf="_Console"
-	declare -g snespathrbf="_Console"
-	declare -g stvpathrbf="_Arcade"
-	declare -g tgfx16pathrbf="_Console"
-	declare -g tgfx16cdpathrbf="_Console"
-    declare -g psxpathrbf="_Console"
-    declare -g vectrexpathrbf="_Console"
-    declare -g wonderswanpathrbf="_Console"
-    declare -g wonderswancolorpathrbf="_Console"
-    declare -g x68kpathrbf="_Computer"
-	
-	
 	# SPECIAL CORES
 	if [[ "${corelist[@]}" == *"amiga"* ]] || [[ "${corelist[@]}" == *"amigacd32"* ]] || [[ "${corelist[@]}" == *"ao486"* ]] && [ -f "${mrsampath}"/samindex ]; then
 		declare -g amigapath="$("${mrsampath}"/samindex -q -s amiga -d |awk -F':' '{print $2}')"
@@ -250,484 +317,7 @@ function init_vars() {
 
 # ======== CORE CONFIG ========
 function init_data() {
-	# Core to long name mappings
-	declare -gA CORE_PRETTY=(
-		["amiga"]="Commodore Amiga"
-		["arcade"]="MiSTer Arcade"
-		["amigacd32"]="Commodore Amiga CD32"
-		["ao486"]="PC 486 DX-100"
-		["atari2600"]="Atari 2600"
-		["atari5200"]="Atari 5200"
-		["atari7800"]="Atari 7800"
-		["atarilynx"]="Atari Lynx"
-		["c64"]="Commodore 64"
-		["cdi"]="Philips CD-i"
-		["coco2"]="TRS-80 Color Computer 2"
-  		["colecovision"]="ColecoVision"
-		["intellivision"]="Mattel Intellivision"
-		["fds"]="Nintendo Disk System"
-		["gb"]="Nintendo Game Boy"
-		["gbc"]="Nintendo Game Boy Color"
-		["gba"]="Nintendo Game Boy Advance"
-		["genesis"]="Sega Genesis / Megadrive"
-		["gg"]="Sega Game Gear"
-		["jaguar"]="Atari Jaguar"
-		["megacd"]="Sega CD / Mega CD"
-		["n64"]="Nintendo N64"
-		["neogeo"]="SNK NeoGeo"
-		["neogeocd"]="SNK NeoGeo CD"
-		["nes"]="Nintendo Entertainment System"
-		["s32x"]="Sega 32x"
-		["saturn"]="Sega Saturn"
-		["sgb"]="Super Gameboy"		
-		["sms"]="Sega Master System"
-		["snes"]="Super Nintendo"
-		["stv"]="Sega Titan Video"
-		["tgfx16"]="NEC TurboGrafx-16 "
-        ["tgfx16cd"]="NEC TurboGrafx-16 CD"
-        ["psx"]="Sony Playstation"
-        ["vectrex"]="GCE Vectrex"
-        ["wonderswan"]="Bandai WonderSwan"
-        ["wonderswancolor"]="Bandai WonderSwan Color"
-        ["x68k"]="Sharp X68000"
-        ["mgls"]="Custom MGL"
-	)
-
-	# Core to file extension mappings
-	declare -glA CORE_EXT=(
-		["amigacd32"]="chd,cue" 
-		["ao486"]="mgl"	
-		["arcade"]="mra"
-		["atari2600"]="a26"     
-		["atari5200"]="a52,car" 
-		["atari7800"]="a78"     
-		["atarilynx"]="lnx"		 
-		["c64"]="crt,prg" 		# need to be tested "reu,tap,flt,rom,c1581"
-		["cdi"]="chd,cue"	
-		["coco2"]="ccc"
-  		["colecovision"]="col"
-		["intellivision"]="int,bin,rom"
-		["fds"]="fds"
-		["gb"]="gb"			 		
-		["gbc"]="gbc"		 		
-		["gba"]="gba"
-		["genesis"]="md,gen" 		
-		["gg"]="gg"
-		["jaguar"]="j64,rom,bin,jag"
-		["megacd"]="chd,cue"
-		["n64"]="n64,z64"
-		["neogeo"]="neo"
-		["neogeocd"]="cue,chd"
-		["nes"]="nes"
-		["s32x"]="32x"
-		["saturn"]="cue,chd"
-		["sgb"]="gb,gbc" 
-		["sms"]="sms,sg"
-		["snes"]="sfc,smc" 	 	# Should we include? "bin,bs"
-		["tgfx16"]="pce,sgx"		
-        ["tgfx16cd"]="chd,cue"
-        ["psx"]="chd,cue,exe"
-        ["vectrex"]="bin"
-        ["wonderswan"]="ws"
-        ["wonderswancolor"]="wsc"
-        ["x68k"]="mgl"
-        ["mgls"]="mgl"
-	)
-	
-	# Core to path mappings
-	declare -gA PATHFILTER=(
-		["amiga"]="${amigapathfilter}"
-		["amigacd32"]="${amigacd32pathfilter}"
-		["ao486"]="${ao486pathfilter}"
-		["arcade"]="${arcadepathfilter}"
-		["atari2600"]="${atari2600pathfilter}"
-		["atari5200"]="${atari5200pathfilter}"
-		["atari7800"]="${atari7800pathfilter}"
-		["atarilynx"]="${atarilynxpathfilter}"				  
-		["c64"]="${c64pathfilter}"
-		["cdi"]="${cdipathfilter}"
-		["coco2"]="${coco2pathfilter}"
-  		["colecovision"]="${colecovisionpathfilter}"
-		["intellivision"]="${intellivisionpathfilter}"
-		["fds"]="${fdspathfilter}"
-		["gb"]="${gbpathfilter}"
-		["gbc"]="${gbcpathfilter}"
-		["gba"]="${gbapathfilter}"
-		["genesis"]="${genesispathfilter}"
-		["gg"]="${ggpathfilter}"
-		["jaguar"]="${jaguarpathfilter}"
-		["megacd"]="${megacdpathfilter}"
-		["n64"]="${n64pathfilter}"
-		["neogeo"]="${neogeopathfilter}"
-		["neogeocd"]="${neogeocdpathfilter}"
-		["nes"]="${nespathfilter}"
-		["s32x"]="${s32xpathfilter}"
-		["saturn"]="${saturnpathfilter}"
-		["sgb"]="${sgbpathfilter}"
-		["sms"]="${smspathfilter}"
-		["snes"]="${snespathfilter}"
-		["stv"]="${stvpathfilter}"
-		["tgfx16"]="${tgfx16pathfilter}"
-        ["tgfx16"]="${tgfx16pathfilter}"
-        ["tgfx16cd"]="${tgfx16cdpathfilter}"
-        ["psx"]="${psxpathfilter}"
-        ["vectrex"]="${vectrexpathfilter}"
-        ["wonderswan"]="${wonderswanpathfilter}"
-        ["wonderswancolor"]="${wonderswancolorpathfilter}"
-        ["x68k"]="${x68kpathfilter}"
-        ["mgls"]="${mglspathfilter}"
-	)
-
-
-	# Core to path mappings for rbf files
-	declare -gA CORE_PATH_RBF=(
-		["amiga"]="${amigapathrbf}"
-		["amigacd32"]="${amigacd32pathrbf}"
-		["ao486"]="${ao486pathrbf}"
-		["arcade"]="${arcadepathrbf}"
-		["atari2600"]="${atari2600pathrbf}"
-		["atari5200"]="${atari5200pathrbf}"
-		["atari7800"]="${atari7800pathrbf}"
-		["atarilynx"]="${atarilynxpathrbf}"					 
-		["c64"]="${c64pathrbf}"
-		["cdi"]="${cdipathrbf}"
-		["coco2"]="${coco2pathrbf}"
-  		["colecovision"]="${colecovisionpathrbf}"
-		["intellivision"]="${intellivisionpathrbf}"
-		["fds"]="${fdspathrbf}"
-		["gb"]="${gbpathrbf}"
-		["gbc"]="${gbcpathrbf}"
-		["gba"]="${gbapathrbf}"
-		["genesis"]="${genesispathrbf}"
-		["gg"]="${ggpathrbf}"
-		["jaguar"]="${jaguarpathrbf}"
-		["megacd"]="${megacdpathrbf}"
-		["n64"]="${n64pathrbf}"
-		["neogeo"]="${neogeopathrbf}"
-		["neogeocd"]="${neogeocdpathrbf}"
-		["nes"]="${nespathrbf}"
-		["s32x"]="${s32xpathrbf}"
-		["saturn"]="${saturnpathrbf}"
-		["sgb"]="${sgbpathrbf}"
-		["sms"]="${smspathrbf}"
-		["snes"]="${snespathrbf}"
-        ["stv"]="${stvpathrbf}"
-        ["tgfx16"]="${tgfx16pathrbf}"
-        ["tgfx16cd"]="${tgfx16cdpathrbf}"
-        ["psx"]="${psxpathrbf}"
-        ["vectrex"]="${vectrexpathrbf}"
-        ["wonderswan"]="${wonderswanpathrbf}"
-        ["wonderswancolor"]="${wonderswancolorpathrbf}"
-        ["x68k"]="${x68kpathrbf}"
-	)
-
-	# Can this core skip Bios/Safety warning messages
-	declare -glA CORE_SKIP=(
-		["amiga"]="no"
-		["amigacd32"]="yes"
-		["ao486"]="no"
-		["arcade"]="no"
-		["atari2600"]="no"
-		["atari5200"]="no"
-		["atari7800"]="no"
-		["atarilynx"]="no"		
-		["c64"]="no"
-		["cdi"]="no"
-		["coco2"]="no"
-  		["colecovision"]="no"
-		["intellivision"]="yes"
-		["fds"]="yes"
-		["gb"]="no"
-		["gbc"]="no"
-		["gba"]="no"
-		["genesis"]="no"
-		["gg"]="no"
-		["jaguar"]="no"
-		["megacd"]="yes"
-		["n64"]="no"
-		["neogeo"]="no"
-		["neogeocd"]="yes"
-		["nes"]="no"
-		["s32x"]="no"
-		["saturn"]="yes"
-		["sgb"]="no"
-		["sms"]="no"
-        ["snes"]="no"
-        ["stv"]="no"
-        ["tgfx16"]="no"
-        ["tgfx16cd"]="yes"
-        ["psx"]="no"
-        ["vectrex"]="no"
-        ["wonderswan"]="no"
-        ["wonderswancolor"]="no"
-        ["x68k"]="no"
-        ["mgls"]="no"
-	)
-	
-
-	# Core to input maps mapping
-	declare -gA CORE_LAUNCH=(
-		["amiga"]="Minimig"
-		["amigacd32"]="Minimig"
-		["ao486"]="ao486"
-		["arcade"]="Arcade"
-		["atari2600"]="ATARI7800"
-		["atari5200"]="ATARI5200"
-		["atari7800"]="ATARI7800"
-		["atarilynx"]="AtariLynx"
-		["c64"]="C64"
-		["cdi"]="CDi"
-		["coco2"]="CoCo2"
-  		["colecovision"]="ColecoVision"
-		["intellivision"]="Intellivision"
-		["fds"]="NES"
-		["gb"]="GAMEBOY"
-		["gbc"]="GAMEBOY"
-		["gba"]="GBA"
-		["genesis"]="MEGADRIVE"
-		["gg"]="SMS"
-		["jaguar"]="Jaguar"
-		["megacd"]="MegaCD"
-		["n64"]="N64"
-		["neogeo"]="NEOGEO"
-		["neogeocd"]="NEOGEO"
-		["nes"]="NES"
-		["s32x"]="S32X"
-		["saturn"]="SATURN"
-		["sgb"]="SGB"
-		["sms"]="SMS"
-		["snes"]="SNES"
-		["stv"]="S-TV"
-		["tgfx16"]="TGFX16"
-        ["tgfx16cd"]="TGFX16"
-        ["psx"]="PSX"
-        ["vectrex"]="Vectrex"
-        ["wonderswan"]="WonderSwan"
-        ["wonderswancolor"]="WonderSwan"
-        ["x68k"]="X68000"
-        ["mgls"]="MGL"
-	)
-	
-	# TTY2OLED Core Pic mappings
-	declare -gA TTY2OLED_PIC_NAME=(
-		["amiga"]="Minimig"
-		["amigacd32"]="Minimig"
-		["ao486"]="ao486"
-		["arcade"]="Arcade"
-		["atari2600"]="ATARI2600"
-		["atari5200"]="ATARI5200"
-		["atari7800"]="ATARI7800"
-		["atarilynx"]="AtariLynx"
-		["c64"]="C64"
-		["cdi"]="CD-i"
-		["coco2"]="CoCo2"
-  		["colecovision"]="ColecoVision"
-		["intellivision"]="Intellivision"
-		["fds"]="fds"
-		["gb"]="GAMEBOY"
-		["gbc"]="GAMEBOY"
-		["gba"]="GBA"
-		["genesis"]="MegaDrive"
-		["gg"]="gamegear"
-		["jaguar"]="Jaguar"
-		["megacd"]="MegaCD"
-		["n64"]="N64"
-		["neogeo"]="NEOGEO"
-		["neogeocd"]="NEOGEO"
-		["nes"]="NES"
-		["s32x"]="S32X"
-		["saturn"]="SATURN"
-		["sgb"]="SGB"
-		["sms"]="SMS"
-		["snes"]="SNES"
-		["stv"]="S-TV"
-        ["tgfx16"]="TGFX16"
-        ["tgfx16cd"]="TGFX16"
-        ["psx"]="PSX"
-        ["vectrex"]="Vectrex"
-        ["wonderswan"]="WonderSwan"
-        ["wonderswancolor"]="WonderSwan"
-        ["x68k"]="X68000"
-        ["mgls"]="MGL"
-	)
-
-	# MGL core name settings
-	declare -gA MGL_CORE=(
-		["amiga"]="Minimig"
-		["amigacd32"]="Minimig"
-		["ao486"]="ao486"
-		["arcade"]="Arcade"
-		["atari2600"]="ATARI7800"
-		["atari5200"]="ATARI5200"
-		["atari7800"]="ATARI7800"
-		["atarilynx"]="AtariLynx"		   
-		["c64"]="C64"
-		["cdi"]="CDi"
-		["coco2"]="CoCo2"
-  		["colecovision"]="ColecoVision"
-		["intellivision"]="Intellivision"
-		["fds"]="NES"
-		["gb"]="GAMEBOY"
-		["gbc"]="GAMEBOY"
-		["gba"]="GBA"
-		["genesis"]="MegaDrive"
-		["gg"]="SMS"
-		["jaguar"]="Jaguar"
-		["megacd"]="MegaCD"
-		["n64"]="N64"
-		["neogeo"]="NEOGEO"
-		["neogeocd"]="NEOGEO"
-		["nes"]="NES"
-		["s32x"]="S32X"
-		["saturn"]="SATURN"
-		["sgb"]="SGB"
-		["sms"]="SMS"
-		["snes"]="SNES"
-		["stv"]="S-TV"
-		["tgfx16"]="TurboGrafx16"
-        ["tgfx16cd"]="TurboGrafx16"
-        ["psx"]="PSX"
-        ["vectrex"]="Vectrex"
-        ["wonderswan"]="WonderSwan"
-        ["wonderswancolor"]="WonderSwan"
-        ["x68k"]="X68000"
-	)
-
-	# MGL setname settings
-	declare -gA MGL_SETNAME=(
-		["amigacd32"]="AmigaCD32"
-		["gbc"]="GBC"
-		["gg"]="GameGear"
-		["wonderswancolor"]="WonderSwanColor"
-	)
-
-	# MGL delay settings
-	declare -giA MGL_DELAY=(
-		["amiga"]="1"
-		["amigacd32"]="1"
-		["ao486"]="0"
-		["arcade"]="2"
-		["atari2600"]="1"
-		["atari5200"]="1"
-		["atari7800"]="1"
-		["atarilynx"]="1"
-		["c64"]="1"
-		["cdi"]="1"
-		["coco2"]="1"
-  		["colecovision"]="1"
-		["intellivision"]="1"
-		["fds"]="2"
-		["gb"]="2"
-		["gbc"]="2"
-		["gba"]="2"
-		["genesis"]="1"
-		["gg"]="1"
-		["jaguar"]="1"
-		["megacd"]="1"
-		["n64"]="1"
-		["neogeo"]="1"
-		["neogeocd"]="1"
-		["nes"]="2"
-		["s32x"]="1"
-		["saturn"]="1"
-		["sgb"]="1"
-		["sms"]="1"
-		["snes"]="2"
-		["stv"]="2"
-        ["tgfx16"]="1"
-        ["tgfx16cd"]="1"
-        ["psx"]="1"
-        ["vectrex"]="1"
-        ["wonderswan"]="1"
-        ["wonderswancolor"]="1"
-        ["x68k"]="1"
-
-	)
-
-	# MGL index settings
-	declare -giA MGL_INDEX=(
-		["amiga"]="0"
-		["amigacd32"]="0"
-		["ao486"]="2"
-		["arcade"]="0"
-		["atari2600"]="0"
-		["atari5200"]="1"
-		["atari7800"]="1"
-		["atarilynx"]="1"   
-		["c64"]="1"
-		["cdi"]="1"
-		["coco2"]="1"
-  		["colecovision"]="1"
-		["intellivision"]="1"
-		["fds"]="0"
-		["gb"]="0"
-		["gbc"]="0"
-		["gba"]="0"
-		["genesis"]="0"
-		["gg"]="2"
-		["jaguar"]="1"
-		["megacd"]="0"
-		["n64"]="1"
-		["neogeo"]="1"
-		["neogeocd"]="1"
-		["nes"]="0"
-		["s32x"]="0"
-		["saturn"]="1"
-		["sgb"]="1"
-		["sms"]="1"
-		["snes"]="0"
-		["stv"]="0"
-        ["tgfx16"]="1"
-        ["tgfx16cd"]="0"
-        ["psx"]="1"
-        ["vectrex"]="1"
-        ["wonderswan"]="1"
-        ["wonderswancolor"]="1"
-        ["x68k"]="2"
-	)
-
-	# MGL type settings
-	declare -glA MGL_TYPE=(
-		["amiga"]="f"
-		["amigacd32"]="f"
-		["ao486"]="s"
-		["arcade"]="f"
-		["atari2600"]="f"
-		["atari5200"]="f"
-		["atari7800"]="f"
-		["atarilynx"]="f"
-		["c64"]="f"
-		["cdi"]="s"
-		["coco2"]="f"
-  		["colecovision"]="f"
-		["intellivision"]="f"
-		["fds"]="f"
-		["gb"]="f"
-		["gbc"]="f"
-		["gba"]="f"
-		["genesis"]="f"
-		["gg"]="f"
-		["jaguar"]="f"
-		["megacd"]="s"
-		["n64"]="f"
-		["neogeo"]="f"
-		["neogeocd"]="s"
-		["nes"]="f"
-		["s32x"]="f"
-		["saturn"]="s"
-		["sgb"]="f"
-		["sms"]="f"
-		["snes"]="f"
-		["stv"]="f"
-		["tgfx16"]="f"
-        ["tgfx16cd"]="s"
-        ["psx"]="s"
-        ["vectrex"]="f"
-        ["wonderswan"]="f"
-        ["wonderswancolor"]="f"
-        ["x68k"]="s"
-	)
-	
+    update_pathfilters
 
 	# NEOGEO to long name mappings English
 	declare -gA NEOGEO_PRETTY_ENGLISH=(
@@ -1044,52 +634,7 @@ function init_data() {
 		["tgfx16cd"]="turboduo"
 	)
 
-	RATED_FILES=(
-		amiga_rated.txt
-		ao486_rated.txt
-		arcade_rated.txt
-		fds_rated.txt
-		gb_rated.txt
-		gba_rated.txt
-		gbc_rated.txt
-		genesis_rated.txt
-		gg_rated.txt
-		megacd_rated.txt
-		n64_mature.txt
-		n64_rated.txt
-		neogeo_rated.txt
-		nes_rated.txt
-		psx_rated.txt
-		saturn_mature.txt
-		saturn_rated.txt
-		sms_rated.txt
-		snes_rated.txt
-		tgfx16_rated.txt
-		tgfx16cd_mature.txt
-		tgfx16cd_rated.txt
-	)
-
-	BLACKLIST_FILES=(
-		amiga_blacklist.txt
-		arcade_blacklist.txt
-		fds_blacklist.txt
-		gba_blacklist.txt
-		genesis_blacklist.txt
-		megacd_blacklist.txt
-		n64_blacklist.txt
-		neogeo_blacklist.txt
-		nes_blacklist.txt
-		psx_blacklist.txt
-		s32x_blacklist.txt
-		sms_blacklist.txt
-		snes_blacklist.txt
-		tgfx16_blacklist.txt
-		tgfx16cd_blacklist.txt
-	)
-
 }
-
-
 
 # ========= SOUCRCE INI & UPDATE =========
 
@@ -1103,18 +648,30 @@ function read_samini() {
 			exit 1
 		fi
 	fi
-	source "${samini_file}"
-	
-	# Remove trailing slash from paths
-	grep "^[^#;]" < "${samini_file}" | grep "pathfilter=" | cut -f1 -d"=" | while IFS= read -r var; do
-		declare -g "${var}"="${!var%/}"
-	done
+        source "${samini_file}"
+
+    # Normalize Yes/No values for screen detection options
+    skip_black_screens=${skip_black_screens,,}
+    black_screen_close=${black_screen_close,,}
+    black_screen_add=${black_screen_add,,}
+    skip_static_screens=${skip_static_screens,,}
+    static_screen_add=${static_screen_add,,}
+
+    # Remove trailing slash from paths
+    grep "^[^#;]" < "${samini_file}" | grep "pathfilter=" | cut -f1 -d"=" | while IFS= read -r var; do
+            declare -g "${var}"="${!var%/}"
+    done
 	
 	#corelist=("$(echo "${corelist[@]}" | tr ',' ' ' | tr -s ' ')")
-	IFS=',' read -ra corelist <<< "${corelist}"
-	IFS=',' read -ra corelistall <<< "${corelistall}"
-	
-	#BGM mode
+       IFS=',' read -ra corelist <<< "${corelist}"
+       IFS=',' read -ra corelistall <<< "${corelistall}"
+
+      for var in ${!skipmessage_input_*}; do
+              core=${var#skipmessage_input_}
+              CORE_AUTO_INPUTS["$core"]="${!var}"
+      done
+
+        #BGM mode
 	if [ "${bgm}" == "yes" ]; then
 		# delete n64 and psx
 		# echo "Deleting N64 and PSX from corelist"
@@ -1140,10 +697,15 @@ function read_samini() {
 	fi
 
 	#NES M82 Mode
-	if [ "$m82" == "yes" ]; then	
-		build_m82_list
-	fi
-	
+        if [ "$m82" == "yes" ]; then
+                build_m82_list
+        fi
+
+        for var in ${!scaler_delay_*}; do
+                core=${var#scaler_delay_}
+                SCALER_DELAY["$core"]="${!var}"
+        done
+
 }
 
 
@@ -1402,12 +964,51 @@ function loop_core() { # loop_core (optional_core_name)
 			continue
 		fi
 		# ----------------------------------------------------
-	done
+        done
+}
+
+function start_scaler_monitor() {
+    local core="$1"
+    if [[ "$skip_black_screens" != "yes" && "$skip_static_screens" != "yes" ]]; then
+        return
+    fi
+    "${scaler_info_path}" > "${scaler_log}" &
+    scaler_info_pid=$!
+    local delay="${SCALER_DELAY[$core]}"
+    if [[ -n "$delay" && "$delay" -gt 0 ]]; then
+        sleep "$delay"
+    fi
+}
+
+function stop_scaler_monitor() {
+    if [[ -n "$scaler_info_pid" ]]; then
+        kill "$scaler_info_pid" 2>/dev/null
+        scaler_info_pid=""
+    fi
+    rm -f "${scaler_log}" 2>/dev/null
+}
+
+function add_to_blacklist() {
+    local core="$1"
+    local name="$2"
+    local blfile="${gamelistpath}/${CORE_BLACKLIST[$core]:-${core}_blacklist.txt}"
+    echo "$name" >> "$blfile"
+    sort -u -o "$blfile" "$blfile"
+}
+
+function add_to_staticlist() {
+    local core="$1"
+    local name="$2"
+    local sfile="${gamelistpath}/${core}_staticlist.txt"
+    echo "$name" >> "$sfile"
+    sort -u -o "$sfile" "$sfile"
 }
 
 function run_countdown_timer() {
-    local counter=${gametimer}
-    
+    local counter=${gametimer}    
+
+ 	start_scaler_monitor "$nextcore"
+
     # Set a local trap to handle Ctrl+C during the countdown, allowing a graceful skip.
     trap 'echo; return' INT
 
@@ -1424,7 +1025,41 @@ function run_countdown_timer() {
 
         sleep 1
         ((counter--))
-        
+
+        if [[ "$skip_black_screens" == "yes" || "$skip_static_screens" == "yes" ]]; then
+            local sinfo=$(tail -n1 "$scaler_log" 2>/dev/null)
+            local stime=$(echo "$sinfo" | grep -o 'StaticTime=[0-9.]*' | cut -d= -f2)
+            [[ -z "$stime" ]] && stime=0
+
+            if [[ "$skip_black_screens" == "yes" ]]; then
+                local rgb=$(echo "$sinfo" | grep -o 'RGB=#......' | cut -d= -f2)
+                local cname=$(echo "$sinfo" | awk -F '-> ' '{print $2}' | awk '{print $1}')
+                if awk -v st="$stime" -v thr="$black_screen_time" 'BEGIN{exit !(st>=thr)}'; then
+                    local isblack=0
+                    if [[ "$black_screen_close" == "yes" ]]; then
+                        [[ "$cname" == "Black" ]] && isblack=1
+                    else
+                        [[ "${rgb^^}" == "#000000" ]] && isblack=1
+                    fi
+                    if [ $isblack -eq 1 ]; then
+                        echo "Black screen detected. Skipping game."
+                        [[ "$black_screen_add" == "yes" ]] && add_to_blacklist "$nextcore" "${romname%.*}"
+                        stop_scaler_monitor
+                        return
+                    fi
+                fi
+            fi
+
+            if [[ "$skip_static_screens" == "yes" ]]; then
+                if awk -v st="$stime" -v thr="$static_screen_time" 'BEGIN{exit !(st>=thr)}'; then
+                    echo "Static screen detected. Skipping game."
+                    [[ "$static_screen_add" == "yes" ]] && add_to_staticlist "$nextcore" "${romname%.*}"
+                    stop_scaler_monitor
+                    return
+                fi
+            fi
+        fi
+
         # --- Activity Checks ---
         # NOTE: This section could also be refactored into a helper function
         # to make the countdown loop even cleaner.
@@ -1443,12 +1078,14 @@ function run_countdown_timer() {
         fi
 
         if [ -s "$joy_activity_file" ] && [ "${listenjoy}" == "yes" ]; then
-            handle_joy_activity 
+            handle_joy_activity
             if [ $? -eq 1 ]; then # Check if handle_joy_activity wants to break the loop
                 return
             fi
         fi
     done
+
+    stop_scaler_monitor
 
     # Restore the default INT trap once the countdown is over.
     trap - INT
@@ -1547,7 +1184,7 @@ function next_core() { # next_core (core)
 	fi
 	
     # Check if new roms got added
-    if [[ "$check_for_new_games" == "yes" ]]; then
+    if [[ "$check_for_new_games" == "Yes" ]]; then
             check_list_update ${nextcore}
     fi
 	
@@ -2352,14 +1989,14 @@ function create_all_gamelists() {
 
 function schedule_gamelist_updates() {
         local core
-		[[ "$check_for_new_games" != "yes" ]] && return
+		[[ "$check_for_new_games" != "Yes" ]] && return
         for core in ${corelist//,/ }; do
                 check_list_update "$core"
         done
 }
 
 function check_list_update() {
-    [[ "$check_for_new_games" != "yes" ]] && return
+    [[ "$check_for_new_games" != "Yes" ]] && return
     local core="$1"
     local orig="${gamelistpath}/${core}_gamelist.txt"
     local compdir="${gamelistpathtmp}/comp"
@@ -2578,6 +2215,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             tty_corename=$(grep "<setname>" "${rompath}" | sed -e 's/<setname>//' -e 's/<\/setname>//' | tr -cd '[:alnum:]')
             mute_target="${tty_corename:-$gamename}"
             launch_cmd="load_core ${rompath}"
+            send_auto_inputs "${core}" &
             ;;
 
         "ao486")
@@ -2613,7 +2251,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             tty_corename="${core}"
             mute_target="${core}"
             launch_cmd="load_core ${rompath}"
-            skipmessage_ao486 &
+       		send_auto_inputs "${core}" &
             ;;
             
         "x68k")
@@ -2645,6 +2283,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             tty_corename="${core}"
             mute_target="${core}"
             launch_cmd="load_core ${rompath}"
+            send_auto_inputs "${core}" &
             ;;
 
         "mgls")
@@ -2655,8 +2294,9 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
            mute_target="${tty_corename}"
            [ -f "${rompath}" ] && cp "${rompath}" /tmp/SAM_Game.mgl
            launch_cmd="load_core ${rompath}"
-           skipmessage "${core}" &
+           send_auto_inputs "${core}" &
            ;;
+
 
         "amiga")
             ### Amiga (MegaAGS) Loader ###
@@ -2668,16 +2308,13 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             fi
             # --- End Prerequisite Check ---
 
-            local amiga_title_raw
-            amiga_title_raw=$(pick_random_game "amiga")
-
-            if [ -z "${amiga_title_raw}" ]; then
+            if [ -z "${rompath_arg}" ]; then
                 echo "ERROR: Failed to pick an Amiga game from the list." >&2
                 return 1
             fi
 
-            gamename="$(echo "${amiga_title_raw}" | sed 's/Demo: //' | tr '_' ' ')"
-            local ags_boot_title="${amiga_title_raw//Demo: /}"
+            gamename="$(echo "${rompath_arg}" | sed 's/Demo: //' | tr '_' ' ')"
+            local ags_boot_title="${rompath_arg//Demo: /}"
             echo "${ags_boot_title}" > "${amigapath}/shared/ags_boot"
             rompath="${gamename}"
 
@@ -2689,6 +2326,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             else
                 launch_cmd="load_core ${amigacore}"
             fi
+            send_auto_inputs "${core}" &
             ;;
 
         "amigacd32")
@@ -2716,6 +2354,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
 
             launch_cmd="load_core /media/fat/_Console/Amiga CD32.mgl"
             post_launch_hook="(sleep 10; /media/fat/Scripts/.MiSTer_SAM/mbc raw_seq :30) &"
+            send_auto_inputs "${core}" &
             ;;
 
         *)
@@ -2743,7 +2382,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             
             launch_cmd="load_core /tmp/SAM_Game.mgl"
             
-            skipmessage "${core}" &
+            send_auto_inputs "${core}" &
             ;;
     esac
 
@@ -3087,7 +2726,8 @@ function sam_prep() {
 }
 
 function sam_cleanup() {
-	# Clean up by umounting any mount binds
+    stop_scaler_monitor
+    # Clean up by umounting any mount binds
 	#[ -f "${configpath}/Volume.dat" ] && [ ${mute} == "yes" ] && rm "${configpath}/Volume.dat"
 	only_unmute_if_needed
 	[ "$(mount | grep -ic "${amigapath}"/shared)" == "1" ] && umount -l "${amigapath}/shared"
@@ -3247,7 +2887,7 @@ function creategl() {
 	parse_cmd stop
 }
 
-function skipmessage() {
+function send_auto_inputs() {
     local core=${1}
 
     # Exit immediately if the core argument is missing, for safety.
@@ -3255,48 +2895,37 @@ function skipmessage() {
         return
     fi
 
-    # Check the global 'skipmessage' setting AND the core-specific setting from the CORE_SKIP array.
-    if [ "${skipmessage}" == "yes" ] && [ "${CORE_SKIP[${core}]}" == "yes" ]; then
-        # If both are 'yes', wait for the configured time and send the button presses.
-        sleep "$skiptime"
-        samdebug "Button push sent for '${core}' to skip BIOS"
-        if [ "${core}" == "intellivision" ]; then
-            "${mrsampath}/mbc" raw_seq :1C
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :02
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :1C
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :02
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :1C
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :03
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :1C
-        else
-            "${mrsampath}/mbc" raw_seq :31
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :31
-        fi
+    # Respect global setting and ensure a sequence exists for the core.
+    local sequence="${CORE_AUTO_INPUTS[$core]}"
+    if [[ ${skipmessage,,} != "yes" ]] || [ -z "${sequence}" ]; then
+        return
     fi
-}
+    samdebug "Auto input sequence sent for '${core}'"
+    local -a tokens=(${sequence})
+    local last_index=$(( ${#tokens[@]} - 1 ))
+    local i token code delay
 
-function skipmessage_ao486() {
-		sleep "$skiptime"
-		samdebug "Button pushes sent to (hopefully) skip past selection screens"
-		"${mrsampath}/mbc" raw_seq :02
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :22
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :1C
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :19
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :32
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :3B
+    for i in "${!tokens[@]}"; do
+        token="${tokens[i]}"
 
+        # Allow delay-only tokens (e.g., ":3")
+        if [[ "${token}" == :* ]]; then
+            delay="${token#:}"
+            sleep "${delay}"
+            continue
+        fi
+
+        code="${token%%:*}"
+        delay="${token#*:}"
+        [ "${delay}" = "${token}" ] && delay=0
+
+        "${mrsampath}/mbc" raw_seq :${code}
+
+        # Wait only between inputs, never after the last one.
+        if [ "$i" -lt "$last_index" ] && [ "${delay}" != 0 ]; then
+            sleep "${delay}"
+        fi
+    done
 }
 
 function mglfavorite() {
@@ -3343,25 +2972,6 @@ function delete_from_corelist() { # delete_from_corelist core tmp
 		done
 	fi
 }
-
-
-function reset_core_gl() { # args ${nextcore}
-	echo " Deleting old game lists for ${1^^}..."
-	rm "${gamelistpath}/${1}_gamelist.txt" &>/dev/null
-	sync "${gamelistpath}"
-}
-
-
-
-function core_error_checklist() { # core_error core /path/to/ROM
-		delete_from_corelist "${1}"
-		echo " List of cores is now: ${corelist[*]}"
-		declare -g romloadfails=0
-		# Load a different core
-		next_core
-
-}
-
 
 function disable_bootrom() {
 	if [ "${disablebootrom}" == "yes" ]; then
@@ -3492,63 +3102,7 @@ function only_unmute_if_needed() {
     return 1    # indicate no action taken
   fi
 }
-
-
-function check_zips() { # check_zips core
-	# Check if zip still exists
-	#samdebug "Checking zips in file..."
-	unset zipsondisk
-	unset zipsinfile
-	unset files
-	unset newfiles
-	mapfile -t zipsinfile < <(fgrep ".zip" "${gamelistpath}/${1}_gamelist.txt" | awk -F".zip" '!seen[$1]++' | awk -F".zip" '{print $1}' | sed -e 's/$/.zip/')
-	if [ ${#zipsinfile[@]} -gt 0 ]; then
-		for zips in "${zipsinfile[@]}"; do
-			if [ ! -f "${zips}" ]; then
-				samdebug "Creating new game list because zip file[s] seems to have changed."
-				build_gamelist "${1}"
-				unset zipsinfile
-				mapfile -t zipsinfile < <(fgrep ".zip" "${gamelistpath}/${1}_gamelist.txt" | awk -F".zip" '!seen[$1]++' | awk -F".zip" '{print $1}' | sed -e 's/$/.zip/')
-				break
-				return
-			fi
-		done
-		#samdebug "Done."
-        #samdebug -n "Checking zips on disk..."
-        if [ "${checkzipsondisk}" == "yes" ] || [ "${force_zip_scan}" == "yes" ]; then
-                # Check for new zips
-                corepath="$("${mrsampath}"/samindex -q -s "${1}" -d |awk -F':' '{print $2}')"
-                readarray -t files <<< "$(find "${corepath}" -maxdepth 2 -type f -name "*.zip")"
-                extgrep=$(echo ".${CORE_EXT[${1}]}" | sed -e "s/,/\\\|/g"| sed 's/,/,./g')
-                # Check which files have valid roms
-                readarray -t newfiles <<< "$(printf '%s\n'  "${zipsinfile[@]}" "${files[@]}"  | sort | uniq -iu )"
-                if [[ "${newfiles[*]}" ]]; then
-                        for f in "${newfiles[@]}"; do
-                                if [ -f "${f}" ]; then
-                                        if "${mrsampath}"/partun -l "${f}" --ext "${extgrep}" | grep -q "${extgrep}"; then
-                                                zipsondisk+=( "${f}" )
-                                        fi
-                                else
-                                        samdebug "Zip file ${f} not found"
-                                fi
-                        done
-                fi
-                if [[ "${zipsondisk[*]}" ]]; then
-                        result="$(printf '%s\n' "${zipsondisk[@]}")"
-                        if [[ "${result}" ]]; then
-                                samdebug "Found new zip file[s]: ${result##*/}"
-                                build_gamelist "${1}"
-                                force_zip_scan="no"
-                                return
-                        fi
-                fi
-                force_zip_scan="no"
-        fi
-	fi
-	#samdebug "Done."
-}
 	
-
 function filter_list() { # args: core
     local core=${1}
     local master_list="${gamelistpath}/${core}_gamelist.txt"
@@ -3621,15 +3175,24 @@ function filter_list() { # args: core
         done
     fi
 
-    if [ "${disable_blacklist}" == "no" ] && [ -f "${gamelistpath}/${core}_blacklist.txt" ]; then
-        echo -n "Applying static screen blacklist for '${core}'... " >&2
-        awk "BEGIN{while(getline<\"${gamelistpath}/${core}_blacklist.txt\"){a[\$0]=1}} {gamelistfile=\$0;sub(/\\.[^.]*\$/,\"\",gamelistfile);sub(/^.*\\//,\"\",gamelistfile);if(!(gamelistfile in a))print}" \
-        "${tmpfile}" > "${tmpfile}.filtered"
-        if [ -s "${tmpfile}.filtered" ]; then
-            mv -f "${tmpfile}.filtered" "${tmpfile}"
+    if [ "${disable_blacklist}" == "no" ] && [[ -n "${CORE_BLACKLIST[$core]}" ]]; then
+        local applied=0
+        for bfile in ${CORE_BLACKLIST[$core]}; do
+            if [ -f "${gamelistpath}/$bfile" ]; then
+                echo -n "Applying static screen blacklist for '${core}' ($bfile)... " >&2
+                awk "BEGIN{while(getline<\"${gamelistpath}/$bfile\"){a[\$0]=1}} {gamelistfile=\$0;sub(/\\.[^.]*\$/,\"\",gamelistfile);sub(/^.*\\//,\"\",gamelistfile);if(!(gamelistfile in a))print}" \
+                "${tmpfile}" > "${tmpfile}.filtered"
+                if [ -s "${tmpfile}.filtered" ]; then
+                    mv -f "${tmpfile}.filtered" "${tmpfile}"
+                fi
+                applied=1
+            fi
+        done
+        if [ "$applied" -eq 0 ]; then
+            echo -n "No blacklist filter found for '${core}'... " >&2
         fi
-	else 
-		 echo -n "No blacklist filter found for '${core}'... " >&2
+    else
+        echo -n "No blacklist filter found for '${core}'... " >&2
     fi
 
     cp -f "${tmpfile}" "${session_list}"
@@ -3648,79 +3211,77 @@ function filter_list() { # args: core
 
 # Helper function for the ratings filter.
 function apply_ratings_filter() {
-    local core=${1}
-    local target_file=${2} # Pass the file to modify ($tmpfile)
-		echo "Ratings Mode ${rating} active - Filtering Roms..."	
-		if [ "${rating}" == "kids" ]; then
-				if [ ${1} == amiga ]; then
-					fgrep -f "${mrsampath}/SAM_Rated/amiga_rated.txt" <(fgrep -v "Demo:" "${gamelistpath}/amiga_gamelist.txt") | awk -F'(' '!seen[$1]++ {print $0}' > "${tmpfilefilter}"
-				else
-					fgrep -f "${mrsampath}/SAM_Rated/${1}_rated.txt" "${gamelistpathtmp}/${1}_gamelist.txt" | awk -F "/" '{split($NF,a," \\("); if (!seen[a[1]]++) print $0}' > "${tmpfilefilter}"
-				fi
-				if [ -s "${tmpfilefilter}" ]; then 
-					samdebug "$(wc -l <"${tmpfilefilter}") games after kids safe filter applied."
-					cp -f "${tmpfilefilter}" "${gamelistpathtmp}/${1}_gamelist.txt"
-				else
-					delete_from_corelist "${1}"
-					delete_from_corelist "${1}" tmp
-					echo "${1} kids safe filter produced no results and will be disabled."
-					echo "List of cores is now: ${corelist[*]}"
-					return 1
-				fi
-		else
-			# $1 is the core name
-			rated_file="${mrsampath}/SAM_Rated/${1}_mature.txt"
-			if [[ ! -f "$rated_file" ]]; then
-			  samdebug "No ${1}_mature.txt found—skipping mature filter."
-			else
-			  # load your mature names
-			  mapfile -t rated_list <"$rated_file"
-
-			  # prepare output file
-			  : >"$tmpfilefilter"
-
-			  # choose which gamelist to read (and strip Demos for amiga)
-			  if [[ "$1" == "amiga" ]]; then
-				gamelist_src="${gamelistpath}/amiga_gamelist.txt"
-				readarray -t games < <(grep -v '^Demo:' "$gamelist_src")
-			  else
-				gamelist_src="${gamelistpathtmp}/${1}_gamelist.txt"
-				readarray -t games < <(cat "$gamelist_src")
-			  fi
-
-			  declare -A seen
-			  for line in "${games[@]}"; do
-				# strip dir + extension
-				name="${line##*/}"
-				name="${name%.*}"
-				name_lc="${name,,}"
-
-				# loose substring match
-				for entry in "${rated_list[@]}"; do
-				  entry_lc="${entry,,}"
-				  if [[ "$name_lc" == *"$entry_lc"* ]]; then
-					if [[ -z "${seen[$name_lc]}" ]]; then
-					  seen[$name_lc]=1
-					  printf '%s\n' "$line" >>"$tmpfilefilter"
-					fi
-					break
-				  fi
-				done
-			  done
-
-			  if [[ -s "$tmpfilefilter" ]]; then
-				samdebug "$(wc -l <"$tmpfilefilter") games after mature filter applied."
-				cp -f "$tmpfilefilter" "${gamelistpathtmp}/${1}_gamelist.txt"
-			  else
-				delete_from_corelist "$1"
-				delete_from_corelist "$1" tmp
-				echo "${1} mature filter produced no results and will be disabled."
-				echo "List of cores is now: ${corelist[*]}"
-				return 1
-			  fi
-			fi
-
-		fi
+    local core=$1
+    local target_file=$2 # Pass the file to modify ($tmpfile)
+    echo "Ratings Mode ${rating} active - Filtering Roms..."
+    local rated_file=""
+    if [[ "$rating" == "kids" ]]; then
+        for f in ${CORE_RATED[$core]}; do
+            [[ $f == *_rated.txt ]] && { rated_file=$f; break; }
+        done
+        if [[ -z "$rated_file" ]]; then
+            samdebug "No rated list for ${core}—skipping kids filter."
+            return 0
+        fi
+        if [[ "$core" == "amiga" ]]; then
+            fgrep -f "${mrsampath}/SAM_Rated/$rated_file" <(fgrep -v "Demo:" "${gamelistpath}/amiga_gamelist.txt") | awk -F'(' '!seen[$1]++ {print $0}' > "${tmpfilefilter}"
+        else
+            fgrep -f "${mrsampath}/SAM_Rated/$rated_file" "${gamelistpathtmp}/${core}_gamelist.txt" | awk -F "/" '{split($NF,a," \\("); if (!seen[a[1]]++) print $0}' > "${tmpfilefilter}"
+        fi
+        if [ -s "${tmpfilefilter}" ]; then
+            samdebug "$(wc -l <"${tmpfilefilter}") games after kids safe filter applied."
+            cp -f "${tmpfilefilter}" "${gamelistpathtmp}/${core}_gamelist.txt"
+        else
+            delete_from_corelist "${core}"
+            delete_from_corelist "${core}" tmp
+            echo "${core} kids safe filter produced no results and will be disabled."
+            echo "List of cores is now: ${corelist[*]}"
+            return 1
+        fi
+    else
+        for f in ${CORE_RATED[$core]}; do
+            [[ $f == *_mature.txt ]] && { rated_file=$f; break; }
+        done
+        if [[ -z "$rated_file" ]] || [[ ! -f "${mrsampath}/SAM_Rated/$rated_file" ]]; then
+            samdebug "No ${core} mature list found—skipping mature filter."
+            return 0
+        fi
+        mapfile -t rated_list <"${mrsampath}/SAM_Rated/$rated_file"
+        : >"$tmpfilefilter"
+        if [[ "$core" == "amiga" ]]; then
+            gamelist_src="${gamelistpath}/amiga_gamelist.txt"
+            readarray -t games < <(grep -v '^Demo:' "$gamelist_src")
+        else
+            gamelist_src="${gamelistpathtmp}/${core}_gamelist.txt"
+            readarray -t games < <(cat "$gamelist_src")
+        fi
+        declare -A seen
+        for line in "${games[@]}"; do
+            name="${line##*/}"
+            name="${name%.*}"
+            name_lc="${name,,}"
+            for entry in "${rated_list[@]}"; do
+                entry_lc="${entry,,}"
+                if [[ "$name_lc" == *"$entry_lc"* ]]; then
+                    if [[ -z "${seen[$name_lc]}" ]]; then
+                        seen[$name_lc]=1
+                        printf '%s\n' "$line" >>"$tmpfilefilter"
+                    fi
+                    break
+                fi
+            done
+        done
+        if [[ -s "$tmpfilefilter" ]]; then
+            samdebug "$(wc -l <"$tmpfilefilter") games after mature filter applied."
+            cp -f "$tmpfilefilter" "${gamelistpathtmp}/${core}_gamelist.txt"
+        else
+            delete_from_corelist "$core"
+            delete_from_corelist "$core" tmp
+            echo "${core} mature filter produced no results and will be disabled."
+            echo "List of cores is now: ${corelist[*]}"
+            return 1
+        fi
+    fi
 }
 
 
@@ -4665,7 +4226,7 @@ init_paths
 
 init_data
 
-if [[ "$update_gamelists_during_play" == "yes" ]]; then
+if [[ "$update_gamelists_during_play" == "Yes" ]]; then
         schedule_gamelist_updates
 fi
 
