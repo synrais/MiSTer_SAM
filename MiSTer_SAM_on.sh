@@ -68,7 +68,6 @@ function init_vars() {
 	declare -gl corelistall="${corelist}"
 	declare -gl skipmessage="Yes"
 	declare -gl disablebootrom="no"
-	declare -gl skiptime="10"
 	declare -gl norepeat="Yes"
 	declare -gl disable_blacklist="No"
 	declare -gl amigaselect="All"
@@ -93,6 +92,7 @@ function init_vars() {
 	declare -gi counter=0
 	declare -gA corewc
 	declare -gA corep
+    declare -gA CORE_AUTO_INPUTS=()
 	declare -g userstartup="/media/fat/linux/user-startup.sh"
 	declare -g userstartuptpl="/media/fat/linux/_user-startup.sh"
 	declare -gl useneogeotitles="Yes"
@@ -420,51 +420,7 @@ function init_data() {
         ["wonderswancolor"]="${wonderswancolorpathrbf}"
         ["x68k"]="${x68kpathrbf}"
 	)
-
-	# Can this core skip Bios/Safety warning messages
-	declare -glA CORE_SKIP=(
-		["amiga"]="No"
-		["amigacd32"]="Yes"
-		["ao486"]="No"
-		["arcade"]="No"
-		["atari2600"]="No"
-		["atari5200"]="No"
-		["atari7800"]="No"
-		["atarilynx"]="No"		
-		["c64"]="No"
-		["cdi"]="No"
-		["coco2"]="No"
-  		["colecovision"]="No"
-		["intellivision"]="Yes"
-		["fds"]="Yes"
-		["gb"]="No"
-		["gbc"]="No"
-		["gba"]="No"
-		["genesis"]="No"
-		["gg"]="No"
-		["jaguar"]="No"
-		["megacd"]="Yes"
-		["n64"]="No"
-		["neogeo"]="No"
-		["neogeocd"]="Yes"
-		["nes"]="No"
-		["s32x"]="No"
-		["saturn"]="Yes"
-		["sgb"]="No"
-		["sms"]="No"
-        ["snes"]="No"
-        ["stv"]="No"
-        ["tgfx16"]="No"
-        ["tgfx16cd"]="Yes"
-        ["psx"]="No"
-        ["vectrex"]="No"
-        ["wonderswan"]="No"
-        ["wonderswancolor"]="No"
-        ["x68k"]="No"
-        ["mgls"]="No"
-	)
 	
-
 	# Core to input maps mapping
 	declare -gA CORE_LAUNCH=(
 		["amiga"]="Minimig"
@@ -1111,10 +1067,15 @@ function read_samini() {
 	done
 	
 	#corelist=("$(echo "${corelist[@]}" | tr ',' ' ' | tr -s ' ')")
-	IFS=',' read -ra corelist <<< "${corelist}"
-	IFS=',' read -ra corelistall <<< "${corelistall}"
-	
-	#BGM mode
+       IFS=',' read -ra corelist <<< "${corelist}"
+       IFS=',' read -ra corelistall <<< "${corelistall}"
+
+      for var in ${!skipmessage_input_*}; do
+              core=${var#skipmessage_input_}
+              CORE_AUTO_INPUTS["$core"]="${!var}"
+      done
+
+        #BGM mode
 	if [ "${bgm}" == "yes" ]; then
 		# delete n64 and psx
 		# echo "Deleting N64 and PSX from corelist"
@@ -2613,7 +2574,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             tty_corename="${core}"
             mute_target="${core}"
             launch_cmd="load_core ${rompath}"
-            skipmessage_ao486 &
+       		send_auto_inputs "${core}" &
             ;;
             
         "x68k")
@@ -2655,8 +2616,9 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
            mute_target="${tty_corename}"
            [ -f "${rompath}" ] && cp "${rompath}" /tmp/SAM_Game.mgl
            launch_cmd="load_core ${rompath}"
-           skipmessage "${core}" &
+           send_auto_inputs "${core}" &
            ;;
+
 
         "amiga")
             ### Amiga (MegaAGS) Loader ###
@@ -2713,6 +2675,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
 
             launch_cmd="load_core /media/fat/_Console/Amiga CD32.mgl"
             post_launch_hook="(sleep 10; /media/fat/Scripts/.MiSTer_SAM/mbc raw_seq :30) &"
+            send_auto_inputs "${core}" &
             ;;
 
         *)
@@ -2740,7 +2703,7 @@ function load_core() { # load_core core [/path/to/rom] [name_of_rom]
             
             launch_cmd="load_core /tmp/SAM_Game.mgl"
             
-            skipmessage "${core}" &
+            send_auto_inputs "${core}" &
             ;;
     esac
 
@@ -3244,7 +3207,7 @@ function creategl() {
 	parse_cmd stop
 }
 
-function skipmessage() {
+function send_auto_inputs() {
     local core=${1}
 
     # Exit immediately if the core argument is missing, for safety.
@@ -3252,48 +3215,37 @@ function skipmessage() {
         return
     fi
 
-    # Check the global 'skipmessage' setting AND the core-specific setting from the CORE_SKIP array.
-    if [ "${skipmessage}" == "yes" ] && [ "${CORE_SKIP[${core}]}" == "yes" ]; then
-        # If both are 'yes', wait for the configured time and send the button presses.
-        sleep "$skiptime"
-        samdebug "Button push sent for '${core}' to skip BIOS"
-        if [ "${core}" == "intellivision" ]; then
-            "${mrsampath}/mbc" raw_seq :1C
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :02
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :1C
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :02
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :1C
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :03
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :1C
-        else
-            "${mrsampath}/mbc" raw_seq :31
-            sleep 1
-            "${mrsampath}/mbc" raw_seq :31
-        fi
+    # Respect global setting and ensure a sequence exists for the core.
+    local sequence="${CORE_AUTO_INPUTS[$core]}"
+    if [[ ${skipmessage,,} != "yes" ]] || [ -z "${sequence}" ]; then
+        return
     fi
-}
+    samdebug "Auto input sequence sent for '${core}'"
+    local -a tokens=(${sequence})
+    local last_index=$(( ${#tokens[@]} - 1 ))
+    local i token code delay
 
-function skipmessage_ao486() {
-		sleep "$skiptime"
-		samdebug "Button pushes sent to (hopefully) skip past selection screens"
-		"${mrsampath}/mbc" raw_seq :02
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :22
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :1C
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :19
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :32
-		sleep 1
-		"${mrsampath}/mbc" raw_seq :3B
+    for i in "${!tokens[@]}"; do
+        token="${tokens[i]}"
 
+        # Allow delay-only tokens (e.g., ":3")
+        if [[ "${token}" == :* ]]; then
+            delay="${token#:}"
+            sleep "${delay}"
+            continue
+        fi
+
+        code="${token%%:*}"
+        delay="${token#*:}"
+        [ "${delay}" = "${token}" ] && delay=0
+
+        "${mrsampath}/mbc" raw_seq :${code}
+
+        # Wait only between inputs, never after the last one.
+        if [ "$i" -lt "$last_index" ] && [ "${delay}" != 0 ]; then
+            sleep "${delay}"
+        fi
+    done
 }
 
 function mglfavorite() {
