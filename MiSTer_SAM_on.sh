@@ -190,6 +190,7 @@ function init_vars() {
     declare -gl skip_static_screens="no"
     declare -g static_screen_time=10
     declare -gl static_screen_add="no"
+	declare -g scaler_delay=0
     declare -gA SCALER_DELAY=()
     declare -g scaler_info_pid=""
     declare -g scaler_info_path="${mrsampath}/scaler_info"
@@ -976,9 +977,9 @@ function start_scaler_monitor() {
     samdebug "Starting scaler monitor for ${core}"
     "${scaler_info_path}" > "${scaler_log}" &
     scaler_info_pid=$!
-    local delay="${SCALER_DELAY[$core]}"
-    if [[ -n "$delay" && "$delay" -gt 0 ]]; then	
-	        samdebug "Delaying screen check for ${core} by ${delay}s"
+    local delay="${SCALER_DELAY[$core]:-$scaler_delay}"
+    if [[ -n "$delay" && "$delay" -gt 0 ]]; then
+        samdebug "Delaying screen check for ${core} by ${delay}s"
         sleep "$delay"
     fi
 }
