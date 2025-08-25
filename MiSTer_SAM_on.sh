@@ -179,29 +179,14 @@ function init_vars() {
 	declare -gl rating="No"
 	declare -gl dupe_mode="normal"
 	declare -gl listenmouse="Yes"
-    declare -gl listenkeyboard="Yes"
-    declare -gl listenjoy="Yes"
-    declare -gl mgls_dirs=""
-    # ======== SCREEN CHECK OPTIONS =======
-    declare -gl skip_black_screens="no"
-    declare -g black_screen_time=5
-    declare -gl black_screen_close="no"
-    declare -gl black_screen_add="yes"
-    declare -gl skip_static_screens="no"
-    declare -g static_screen_time=10
-    declare -gl static_screen_add="no"
-	declare -g scaler_delay=0
-    declare -gA SCALER_DELAY=()
-    declare -g scaler_info_pid=""
-    declare -g scaler_info_fd=""
-    declare -g scaler_info_path="${mrsampath}/scaler_info"
-    declare -g scaler_info_last=""
-    declare -gi scaler_ignore_until=0
-    declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
-    declare -g branch="main"
-    declare -g raw_base="https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/${branch}"
-    declare -gi counter=0
-    declare -gA corewc
+	declare -gl listenkeyboard="Yes"
+	declare -gl listenjoy="Yes"
+ 	declare -gl mgls_dirs=""
+	declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
+	declare -g branch="main"
+	declare -g raw_base="https://raw.githubusercontent.com/mrchrisster/MiSTer_SAM/${branch}"
+	declare -gi counter=0
+	declare -gA corewc
 	declare -gA corep
     declare -gA CORE_AUTO_INPUTS=()
 	declare -g userstartup="/media/fat/linux/user-startup.sh"
@@ -651,19 +636,12 @@ function read_samini() {
 			exit 1
 		fi
 	fi
-        source "${samini_file}"
-
-    # Normalize Yes/No values for screen detection options
-    skip_black_screens=${skip_black_screens,,}
-    black_screen_close=${black_screen_close,,}
-    black_screen_add=${black_screen_add,,}
-    skip_static_screens=${skip_static_screens,,}
-    static_screen_add=${static_screen_add,,}
-
-    # Remove trailing slash from paths
-    grep "^[^#;]" < "${samini_file}" | grep "pathfilter=" | cut -f1 -d"=" | while IFS= read -r var; do
-            declare -g "${var}"="${!var%/}"
-    done
+	source "${samini_file}"
+	
+	# Remove trailing slash from paths
+	grep "^[^#;]" < "${samini_file}" | grep "pathfilter=" | cut -f1 -d"=" | while IFS= read -r var; do
+		declare -g "${var}"="${!var%/}"
+	done
 	
 	#corelist=("$(echo "${corelist[@]}" | tr ',' ' ' | tr -s ' ')")
        IFS=',' read -ra corelist <<< "${corelist}"
@@ -700,16 +678,10 @@ function read_samini() {
 	fi
 
 	#NES M82 Mode
-        if [ "$m82" == "yes" ]; then
-                build_m82_list
-        fi
-
-        for var in ${!scaler_delay_*}; do
-                core=${var#scaler_delay_}
-                SCALER_DELAY["$core"]="${!var}"
-                samdebug "Custom scaler delay for ${core}: ${!var}s"
-        done
-
+	if [ "$m82" == "yes" ]; then	
+		build_m82_list
+	fi
+	
 }
 
 
@@ -932,17 +904,17 @@ function load_menu_if_needed() {
 
 
 function loop_core() { # loop_core (optional_core_name)
-        echo -e "Starting Super Attract Mode...\nLet Mortal Kombat begin!\n"
-        # Reset game log for this session
-        echo "" >/tmp/SAM_Games.log
-        samdebug "Initial corelist: ${corelist[*]}"
+	echo -e "Starting Super Attract Mode...\nLet Mortal Kombat begin!\n"
+	# Reset game log for this session
+	echo "" >/tmp/SAM_Games.log
+	samdebug "Initial corelist: ${corelist[*]}"
 
-        # This is the main script loop that runs forever.
-        while :; do
-            	# ----------------------------------------------------
-            	# Call next_core to attempt a game launch.
-           	 	# We pass along any argument that might have been given to loop_core.
-            	next_core "${1-}"
+	# This is the main script loop that runs forever.
+	while :; do
+		# ----------------------------------------------------
+		# Call next_core to attempt a game launch.
+		# We pass along any argument that might have been given to loop_core.		
+		next_core "${1-}" 
 
 		# Check the exit code of the next_core function.
 		if [ $? -eq 0 ]; then
@@ -966,76 +938,14 @@ function loop_core() { # loop_core (optional_core_name)
 			echo "List of cores is now: ${corelist[*]}"
 			echo "Trying the next available core..."
 			continue
-                fi
-                # ----------------------------------------------------
-        done
-}
-
-function start_scaler_monitor() {
-    if [[ "$skip_black_screens" != "yes" && "$skip_static_screens" != "yes" ]]; then
-        return
-    fi
-    if [[ -n "$scaler_info_pid" ]]; then
-        return
-    fi
-	scaler_info_last=""
-    samdebug "Starting scaler monitor"
-    coproc SINFO { "${scaler_info_path}"; }
-    scaler_info_pid=$COPROC_PID
-    scaler_info_fd=${SINFO[0]}
-}
-
-function set_scaler_delay() {
-    local core="$1"
-    local delay="${SCALER_DELAY[$core]:-$scaler_delay}"
-    scaler_ignore_until=$(( SECONDS + delay ))
-    samdebug "Delaying screen check for ${core} by ${delay}s"
-}
-
-function stop_scaler_monitor() {
-    if [[ -n "$scaler_info_pid" ]]; then
-        kill "$scaler_info_pid" 2>/dev/null
-        wait "$scaler_info_pid" 2>/dev/null
-        scaler_info_pid=""
-        samdebug "Stopped scaler monitor"
-    fi
-    if [[ -n "$scaler_info_fd" ]]; then
-        exec {scaler_info_fd}<&-
-        scaler_info_fd=""
-    fi
-    scaler_info_last=""
-}
-
-function add_to_blacklist() {
-    local core="$1"
-    local name="$2"
-    local blfile="${gamelistpath}/${CORE_BLACKLIST[$core]:-${core}_blacklist.txt}"
-    echo "$name" >> "$blfile"
-    sort -u -o "$blfile" "$blfile"
-}
-
-function add_to_staticlist() {
-    local core="$1"
-    local name="$2"
-    local sfile="${gamelistpath}/${core}_staticlist.txt"
-    echo "$name" >> "$sfile"
-    sort -u -o "$sfile" "$sfile"
+		fi
+		# ----------------------------------------------------
+	done
 }
 
 function run_countdown_timer() {
     local counter=${gametimer}
-    start_scaler_monitor
-    scaler_info_last=""
-    if [[ -n "$scaler_info_fd" ]]; then
-        local line
-        local max_flush=100
-        # Flush any pending scaler output but avoid an infinite loop by limiting reads
-        while (( max_flush-- > 0 )) && IFS= read -r -t 0 -u "$scaler_info_fd" line; do
-            :
-        done
-    fi
-    set_scaler_delay "$nextcore"
-
+    
     # Set a local trap to handle Ctrl+C during the countdown, allowing a graceful skip.
     trap 'echo; return' INT
 
@@ -1052,52 +962,7 @@ function run_countdown_timer() {
 
         sleep 1
         ((counter--))
-
-        if [[ "$skip_black_screens" == "yes" || "$skip_static_screens" == "yes" ]]; then
-            if [[ -n "$scaler_info_fd" ]]; then
-                local line
-                # Read the latest scaler_info line; strip any carriage return
-                while IFS= read -r -t 0 -u "$scaler_info_fd" line; do
-                    line=${line%$'\r'}
-                    scaler_info_last="$line"
-                done
-            fi
-            local sinfo="$scaler_info_last"
-            if (( SECONDS >= scaler_ignore_until )); then
-                local stime=$(echo "$sinfo" | grep -o 'StaticTime=[0-9.]*' | cut -d= -f2)
-                [[ -z "$stime" ]] && stime=0
-
-                if [[ "$skip_black_screens" == "yes" ]]; then
-                    local rgb=$(echo "$sinfo" | grep -o 'RGB=#......' | cut -d= -f2)
-                    local cname=$(echo "$sinfo" | awk -F '-> ' '{print $2}' | awk '{print $1}')
-                    samdebug "Checking black screen: stime=${stime} threshold=${black_screen_time} rgb=${rgb} cname=${cname}"
-                    if awk -v st="$stime" -v thr="$black_screen_time" 'BEGIN{exit !(st>=thr)}'; then
-                        local isblack=0
-                        if [[ "$black_screen_close" == "yes" ]]; then
-                            [[ "$cname" == "Black" ]] && isblack=1
-                        else
-                            [[ "${rgb^^}" == "#000000" ]] && isblack=1
-                        fi
-                        if [ $isblack -eq 1 ]; then
-                            samdebug "Black screen detected for ${nextcore} (${romname%.*})"
-                            echo "Black screen detected. Skipping game."
-                            [[ "$black_screen_add" == "yes" ]] && add_to_blacklist "$nextcore" "${romname%.*}"
-                            return
-                        fi
-                    fi
-                fi
-                if [[ "$skip_static_screens" == "yes" ]]; then
-                    samdebug "Checking static screen: stime=${stime} threshold=${static_screen_time}"
-                    if awk -v st="$stime" -v thr="$static_screen_time" 'BEGIN{exit !(st>=thr)}'; then
-                        samdebug "Static screen detected for ${nextcore} (${romname%.*})"
-                        echo "Static screen detected. Skipping game."
-                        [[ "$static_screen_add" == "yes" ]] && add_to_staticlist "$nextcore" "${romname%.*}"
-                        return
-                    fi
-                fi
-            fi
-        fi
-
+        
         # --- Activity Checks ---
         # NOTE: This section could also be refactored into a helper function
         # to make the countdown loop even cleaner.
@@ -1116,7 +981,7 @@ function run_countdown_timer() {
         fi
 
         if [ -s "$joy_activity_file" ] && [ "${listenjoy}" == "yes" ]; then
-            handle_joy_activity
+            handle_joy_activity 
             if [ $? -eq 1 ]; then # Check if handle_joy_activity wants to break the loop
                 return
             fi
@@ -2762,8 +2627,7 @@ function sam_prep() {
 }
 
 function sam_cleanup() {
-    stop_scaler_monitor
-    # Clean up by umounting any mount binds
+	# Clean up by umounting any mount binds
 	#[ -f "${configpath}/Volume.dat" ] && [ ${mute} == "yes" ] && rm "${configpath}/Volume.dat"
 	only_unmute_if_needed
 	[ "$(mount | grep -ic "${amigapath}"/shared)" == "1" ] && umount -l "${amigapath}/shared"
@@ -3009,6 +2873,25 @@ function delete_from_corelist() { # delete_from_corelist core tmp
 	fi
 }
 
+
+function reset_core_gl() { # args ${nextcore}
+	echo " Deleting old game lists for ${1^^}..."
+	rm "${gamelistpath}/${1}_gamelist.txt" &>/dev/null
+	sync "${gamelistpath}"
+}
+
+
+
+function core_error_checklist() { # core_error core /path/to/ROM
+		delete_from_corelist "${1}"
+		echo " List of cores is now: ${corelist[*]}"
+		declare -g romloadfails=0
+		# Load a different core
+		next_core
+
+}
+
+
 function disable_bootrom() {
 	if [ "${disablebootrom}" == "yes" ]; then
 		# Make Bootrom folder inaccessible until restart
@@ -3138,7 +3021,63 @@ function only_unmute_if_needed() {
     return 1    # indicate no action taken
   fi
 }
+
+
+function check_zips() { # check_zips core
+	# Check if zip still exists
+	#samdebug "Checking zips in file..."
+	unset zipsondisk
+	unset zipsinfile
+	unset files
+	unset newfiles
+	mapfile -t zipsinfile < <(fgrep ".zip" "${gamelistpath}/${1}_gamelist.txt" | awk -F".zip" '!seen[$1]++' | awk -F".zip" '{print $1}' | sed -e 's/$/.zip/')
+	if [ ${#zipsinfile[@]} -gt 0 ]; then
+		for zips in "${zipsinfile[@]}"; do
+			if [ ! -f "${zips}" ]; then
+				samdebug "Creating new game list because zip file[s] seems to have changed."
+				build_gamelist "${1}"
+				unset zipsinfile
+				mapfile -t zipsinfile < <(fgrep ".zip" "${gamelistpath}/${1}_gamelist.txt" | awk -F".zip" '!seen[$1]++' | awk -F".zip" '{print $1}' | sed -e 's/$/.zip/')
+				break
+				return
+			fi
+		done
+		#samdebug "Done."
+        #samdebug -n "Checking zips on disk..."
+        if [ "${checkzipsondisk}" == "yes" ] || [ "${force_zip_scan}" == "yes" ]; then
+                # Check for new zips
+                corepath="$("${mrsampath}"/samindex -q -s "${1}" -d |awk -F':' '{print $2}')"
+                readarray -t files <<< "$(find "${corepath}" -maxdepth 2 -type f -name "*.zip")"
+                extgrep=$(echo ".${CORE_EXT[${1}]}" | sed -e "s/,/\\\|/g"| sed 's/,/,./g')
+                # Check which files have valid roms
+                readarray -t newfiles <<< "$(printf '%s\n'  "${zipsinfile[@]}" "${files[@]}"  | sort | uniq -iu )"
+                if [[ "${newfiles[*]}" ]]; then
+                        for f in "${newfiles[@]}"; do
+                                if [ -f "${f}" ]; then
+                                        if "${mrsampath}"/partun -l "${f}" --ext "${extgrep}" | grep -q "${extgrep}"; then
+                                                zipsondisk+=( "${f}" )
+                                        fi
+                                else
+                                        samdebug "Zip file ${f} not found"
+                                fi
+                        done
+                fi
+                if [[ "${zipsondisk[*]}" ]]; then
+                        result="$(printf '%s\n' "${zipsondisk[@]}")"
+                        if [[ "${result}" ]]; then
+                                samdebug "Found new zip file[s]: ${result##*/}"
+                                build_gamelist "${1}"
+                                force_zip_scan="No"
+                                return
+                        fi
+                fi
+                force_zip_scan="No"
+        fi
+	fi
+	#samdebug "Done."
+}
 	
+
 function filter_list() { # args: core
     local core=${1}
     local master_list="${gamelistpath}/${core}_gamelist.txt"
