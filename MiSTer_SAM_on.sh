@@ -192,10 +192,13 @@ function init_vars() {
 	declare -gi bootsleep="60"
 	declare -gi totalgamecount		
 	# ======== DEBUG VARIABLES ========
-	declare -gl samdebug="No"
-	declare -gl samdebuglog="No"						
-	# ======== BGM =======
-	declare -gl bgm="No"
+    declare -gl samdebug="No"
+    declare -gl samdebuglog="No"
+    declare -ga samdebug_ensure=()
+    declare -ga samdebug_existing=()
+    declare -g samdebug_ensure_dir=""
+    # ======== BGM =======
+    declare -gl bgm="No"
 	declare -gl bgmplay="Yes"
 	declare -gl bgmstop="Yes"
 	declare -gi gvoladjust="0"
@@ -1744,6 +1747,7 @@ function build_gamelist() {
 function ensure_list() {
     local core_type="$1"
     local dest_dir="${2:-$gamelistpath}"
+    local group_mode="$3"
     local list_file="${dest_dir}/${core_type}_gamelist.txt"
     local build_func
 
@@ -1752,6 +1756,7 @@ function ensure_list() {
     # If the list already exists with content, we're done.
     if [ -s "${list_file}" ]; then
         samdebug "Using existing gamelist for '${core_type}'"
+	    [[ "$group_mode" != "group" ]] && samdebug ":flush_gamelists"
         return 0
     fi
 
@@ -1778,6 +1783,7 @@ function ensure_list() {
     local count
     count="$(wc -l < "${list_file}")"
     samdebug "Gamelist for '${core_type}' ready in '${dest_dir}' with ${count} entries"
+	[[ "$group_mode" != "group" ]] && samdebug ":flush_gamelists"
     return 0
 }
 
@@ -1898,9 +1904,11 @@ function create_all_gamelists() {
                 else
                     built+=("$c")
                 fi
-                ensure_list "${c}" "${gamelistpath}"
+                ensure_list "${c}" "${gamelistpath}" "group"
             fi
         done
+
+        samdebug ":flush_gamelists"
 		
         if (( ${#found[@]} )); then
             samdebug "Game lists found for: ${found[*]}"
@@ -3346,7 +3354,7 @@ function apply_ratings_filter() {
 }
 
 
-function samdebug() {
+function _samdebug_emit() {
     local ts msg
     ts="$(date '+%Y-%m-%d %H:%M:%S')"
     msg="$*"
@@ -3361,6 +3369,38 @@ function samdebug() {
         # Writing to a log file is already separate and is perfectly fine.
         echo "[${ts}] ${msg}" >> /tmp/samdebug.log
     fi
+}
+
+function samdebug() {
+    local msg="$*"
+
+    case "$msg" in
+        ":flush_gamelists")
+            if (( ${#samdebug_ensure[@]} )); then
+                _samdebug_emit "Ensuring gamelist for '${samdebug_ensure[*]}' in '${samdebug_ensure_dir}'"
+            fi
+            if (( ${#samdebug_existing[@]} )); then
+                _samdebug_emit "Using existing gamelists for '${samdebug_existing[*]}'"
+            fi
+            samdebug_ensure=()
+            samdebug_existing=()
+            samdebug_ensure_dir=""
+            return
+            ;;
+    esac
+
+    if [[ $msg =~ ^Ensuring\ gamelist\ for\ \'([^\']+)\'\ in\ \'([^\']+)\'$ ]]; then
+        samdebug_ensure_dir="${BASH_REMATCH[2]}"
+        samdebug_ensure+=("${BASH_REMATCH[1]}")
+        return
+    fi
+
+    if [[ $msg =~ ^Using\ existing\ gamelist\ for\ \'([^\']+)\'$ ]]; then
+        samdebug_existing+=("${BASH_REMATCH[1]}")
+        return
+    fi
+
+    _samdebug_emit "$msg"
 }
 
 samini_mod() {
