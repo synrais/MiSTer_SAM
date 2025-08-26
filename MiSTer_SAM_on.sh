@@ -47,7 +47,6 @@ register_core() {
     MGL_DELAY[$id]="$mgl_delay"
     MGL_INDEX[$id]="$mgl_index"
     MGL_TYPE[$id]="$mgl_type"
-    PATHFILTER[$id]="${id}pathfilter"
     corelist_array+=("$id")
 }
 # Core registration (case sensitive)
@@ -108,10 +107,16 @@ register_core "x68k" "Sharp X68000" "mgl" "_Computer" "X68000" "X68000" "X68000"
 DEFAULT_CORELIST=$(IFS=,; echo "${corelist_array[*]}")
 
 update_pathfilters() {
-    for core in "${!PATHFILTER[@]}"; do
-        local var="${PATHFILTER[$core]}"
-        PATHFILTER[$core]="${!var}"
-    done
+    PATHFILTER=()
+    while IFS='=' read -r var _; do
+        local value="${!var%/}"
+        declare -g "$var"="$value"
+        local core="${var%pathfilter}"
+        if [[ -n "$value" ]]; then
+            PATHFILTER["$core"]="$value"
+            samdebug "Detected path filter for ${core}: $value"
+        fi
+    done < <(grep -E '^[^#;].*pathfilter=' "${samini_file}")
 }
 
 # ======== INI VARIABLES ========
@@ -292,7 +297,6 @@ function init_vars() {
 
 # ======== CORE CONFIG ========
 function init_data() {
-    update_pathfilters
 
 	# NEOGEO to long name mappings English
 	declare -gA NEOGEO_PRETTY_ENGLISH=(
@@ -623,14 +627,11 @@ function read_samini() {
 			exit 1
 		fi
 	fi
-	source "${samini_file}"
-	
-	# Remove trailing slash from paths
-	grep "^[^#;]" < "${samini_file}" | grep "pathfilter=" | cut -f1 -d"=" | while IFS= read -r var; do
-		declare -g "${var}"="${!var%/}"
-	done
-	
-	#corelist=("$(echo "${corelist[@]}" | tr ',' ' ' | tr -s ' ')")
+        source "${samini_file}"
+
+        update_pathfilters
+
+        #corelist=("$(echo "${corelist[@]}" | tr ',' ' ' | tr -s ' ')")
        IFS=',' read -ra corelist <<< "${corelist}"
        IFS=',' read -ra corelistall <<< "${corelistall}"
 
