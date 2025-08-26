@@ -3183,13 +3183,14 @@ function filter_list() { # args: core
         samdebug "Filters for '${core}' already applied this session. Skipping."
         return 0
     fi
-    samdebug "Applying filters to '${core}' (rated: ${CORE_RATED[$core]:-none}, blacklist: ${CORE_BLACKLIST[$core]:-none})"
     # Always start with a fresh copy of the master list in our working file.
     cp -f "${master_list}" "${tmpfile}"
 
-	local before_count
-	before_count=$(wc -l < "${tmpfile}")
-	samdebug "Session list for '${core}' before filtering: ${before_count} entries"
+    local before_count
+    before_count=$(wc -l < "${tmpfile}")
+    samdebug "Session list for '${core}' before filtering: ${before_count} entries"
+
+    samdebug "Applying filters to '${core}' (rated: ${CORE_RATED[$core]:-none}, blacklist: ${CORE_BLACKLIST[$core]:-none})"
 
     # --- Each filter now reads from $tmpfile and writes its output back to $tmpfile ---
     # --- ALL informational 'echo' commands are redirected to stderr (>&2) ---
