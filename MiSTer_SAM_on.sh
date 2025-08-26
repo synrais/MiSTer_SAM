@@ -3190,7 +3190,7 @@ function filter_list() { # args: core
     before_count=$(wc -l < "${tmpfile}")
     samdebug "Session list for '${core}' before filtering: ${before_count} entries"
 
-    samdebug "Applying filters to '${core}' (rated: ${CORE_RATED[$core]:-none}, blacklist: ${CORE_BLACKLIST[$core]:-none})"
+    samdebug "Applying filters to '${core}'${CORE_RATED[$core]:+ (rated)}${CORE_BLACKLIST[$core]:+ (blacklist)}"
 
     # --- Each filter now reads from $tmpfile and writes its output back to $tmpfile ---
     # --- ALL informational 'echo' commands are redirected to stderr (>&2) ---
