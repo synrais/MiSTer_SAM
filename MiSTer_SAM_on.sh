@@ -3202,7 +3202,6 @@ function filter_list() { # args: core
 
     local before_count
     before_count=$(wc -l < "${tmpfile}")
-    samdebug "Session list for '${core}' before filtering: ${before_count} entries"
 
     samdebug "Applying filters to '${core}'${CORE_RATED[$core]:+ (rated)}${CORE_BLACKLIST[$core]:+ (blacklist)}"
 
@@ -3294,7 +3293,9 @@ function filter_list() { # args: core
     fi
 
     cp -f "${tmpfile}" "${session_list}"
-    echo "$(wc -l <"${session_list}") games are now in the active shuffle list." >&2
+    local after_count
+    after_count=$(wc -l < "${session_list}")
+    echo "${after_count} games are now in the active shuffle list." >&2
 
     if [ ! -s "${session_list}" ]; then
         echo "Error: All filters combined produced an empty list for '${core}'." >&2
@@ -3302,7 +3303,7 @@ function filter_list() { # args: core
         return 1
     fi
     touch "$flag_file"
-    samdebug "Filtering complete for '${core}' with $(wc -l < "${session_list}") entries"
+    samdebug "Filtering complete for '${core}': $((before_count - after_count)) filtered, ${after_count} remain"
 
     return 0
 }
