@@ -119,19 +119,6 @@ update_pathfilters() {
     done < <(grep -E '^[^#;].*pathfilter=' "${samini_file}")
 }
 
-normalize_yes_no_flags() {
-    local var decl
-    for var in $(compgen -v); do
-        decl=$(declare -p "$var" 2>/dev/null) || continue
-        [[ $decl == declare\ -[aA]* ]] && continue
-        [[ $decl == declare\ -i* ]] && continue
-        case "${!var,,}" in
-            yes) printf -v "$var" 'yes' ;;
-            no)  printf -v "$var" 'no' ;;
-        esac
-    done
-}
-
 # ======== INI VARIABLES ========
 # Change these in the INI file
 function init_vars() {
@@ -644,7 +631,6 @@ function read_samini() {
 		fi
 	fi
         source "${samini_file}"
-        normalize_yes_no_flags
 
         update_pathfilters
 
@@ -1090,7 +1076,7 @@ function next_core() { # next_core (core)
 	fi
 	
     # Check if new roms got added
-    if [[ "${check_for_new_games,,}" == "yes" ]]; then
+    if [[ "$check_for_new_games" == "Yes" ]]; then
             check_list_update ${nextcore}
     fi
 	
@@ -1942,7 +1928,7 @@ function create_all_gamelists() {
 function schedule_gamelist_updates() {
     local core
     samdebug "Scheduling gamelist update checks"
-    if [[ "${check_for_new_games,,}" != "yes" ]]; then
+    if [[ "$check_for_new_games" != "Yes" ]]; then
         samdebug "New game check disabled"
         return
     fi
@@ -1953,7 +1939,7 @@ function schedule_gamelist_updates() {
 }
 
 function check_list_update() {
-    [[ "${check_for_new_games,,}" != "yes" ]] && return
+    [[ "$check_for_new_games" != "Yes" ]] && return
     local core="$1"
     local orig="${gamelistpath}/${core}_gamelist.txt"
     local compdir="${gamelistpathtmp}/comp"
@@ -2798,9 +2784,8 @@ function sam_enable() { # Enable autoplay
 	fi
 	echo "SAM install complete."
 	echo -e "\n\n\n"
-        source "${samini_file}"
-        normalize_yes_no_flags
-        echo -ne "\e[1m" SAM will start ${samtimeout} sec. after boot"\e[0m"
+	source "${samini_file}"
+	echo -ne "\e[1m" SAM will start ${samtimeout} sec. after boot"\e[0m"
 	if [ "${menuonly,,}" == "yes" ]; then
 		echo -ne "\e[1m" in the main menu"\e[0m"
 	else
@@ -4368,8 +4353,6 @@ function sam_update() { # sam_update (next command)
 
 init_vars
 
-normalize_yes_no_flags
-
 read_samini
 
 init_paths
@@ -4378,7 +4361,7 @@ init_data
 
 discover_lists
 
-if [[ "${update_gamelists_during_play,,}" == "yes" ]]; then
+if [[ "$update_gamelists_during_play" == "Yes" ]]; then
         schedule_gamelist_updates
 fi
 
