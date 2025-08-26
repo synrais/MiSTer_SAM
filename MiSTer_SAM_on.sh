@@ -1751,11 +1751,11 @@ function ensure_list() {
 
     # If the list already exists with content, we're done.
     if [ -s "${list_file}" ]; then
-        samdebug "Gamelist for '${core_type}' already present in '${dest_dir}'"
+        samdebug "Using existing gamelist for '${core_type}'"
         return 0
     fi
 
-    samdebug "Gamelist for '${core_type}' not found in '${dest_dir}'. Building..."
+    samdebug "Building gamelist for '${core_type}'"
 
     # Determine which builder to use
     case "${core_type}" in
@@ -1888,23 +1888,37 @@ function create_all_gamelists() {
         sleep 15
 
         samdebug "Starting background build of standard gamelists..."
-
+		
+        local found=()
+        local built=()
         for c in "${corelist[@]}"; do
-            # Only process non-special cores
             if [[ ! " ${special_cores[*]} " =~ " ${c} " ]]; then
-                # Use the dispatcher to handle the check and call the correct builder.
-                # This is cleaner and respects your modular design.
-                samdebug "Ensuring list for core '${c}'"
+                if [ -s "${gamelistpath}/${c}_gamelist.txt" ]; then
+                    found+=("$c")
+                else
+                    built+=("$c")
+                fi
                 ensure_list "${c}" "${gamelistpath}"
             fi
         done
+		
+        if (( ${#found[@]} )); then
+            samdebug "Game lists found for: ${found[*]}"
+        else
+            samdebug "Game lists found for: none"
+        fi
+        if (( ${#built[@]} )); then
+            samdebug "Game lists built for: ${built[*]}"
+        else
+            samdebug "Game lists built for: none"
+        fi
         
         samdebug "Background build process complete."
     ) &
 }
 
 function schedule_gamelist_updates() {
-   local core
+    local core
     samdebug "Scheduling gamelist update checks"
     if [[ "$check_for_new_games" != "Yes" ]]; then
         samdebug "New game check disabled"
@@ -2550,7 +2564,36 @@ function discover_lists() {
         done
     fi
 
-    samdebug "Discovery complete: rated cores: ${!CORE_RATED[*]}, blacklist cores: ${!CORE_BLACKLIST[*]}, TVC cores: ${!SV_TVC[*]}"
+    local g_lists=()
+    if [[ -d "${gamelistpath}" ]]; then
+        for file in "${gamelistpath}"/*_gamelist.txt; do
+            [[ -e "$file" ]] || continue
+            fname="${file##*/}"
+            core="${fname%%_*}"
+            g_lists+=("$core")
+        done
+    fi
+
+    if (( ${#g_lists[@]} )); then
+        samdebug "Game lists found for: ${g_lists[*]}"
+    else
+        samdebug "Game lists found for: none"
+    fi
+    if (( ${#CORE_BLACKLIST[@]} )); then
+        samdebug "Black lists found for: ${!CORE_BLACKLIST[@]}"
+    else
+        samdebug "Black lists found for: none"
+    fi
+    if (( ${#CORE_RATED[@]} )); then
+        samdebug "Rated lists found for: ${!CORE_RATED[@]}"
+    else
+        samdebug "Rated lists found for: none"
+    fi
+    if (( ${#SV_TVC[@]} )); then
+        samdebug "TVC lists found for: ${!SV_TVC[@]}"
+    else
+        samdebug "TVC lists found for: none"
+    fi
 }
 
 function sam_prep() {
@@ -3135,7 +3178,7 @@ function filter_list() { # args: core
         samdebug "Filters for '${core}' already applied this session. Skipping."
         return 0
     fi
-    samdebug "Applying filters to '${core}'"
+    samdebug "Applying filters to '${core}' (rated: ${CORE_RATED[$core]:-none}, blacklist: ${CORE_BLACKLIST[$core]:-none})"
     # Always start with a fresh copy of the master list in our working file.
     cp -f "${master_list}" "${tmpfile}"
 
@@ -3199,7 +3242,7 @@ function filter_list() { # args: core
         local applied=0
         for bfile in ${CORE_BLACKLIST[$core]}; do
             if [ -f "${gamelistpath}/$bfile" ]; then
-                echo -n "Applying static screen blacklist for '${core}' ($bfile)... " >&2
+                samdebug "Applying static screen blacklist for '${core}' ($bfile)"
                 awk "BEGIN{while(getline<\"${gamelistpath}/$bfile\"){a[\$0]=1}} {gamelistfile=\$0;sub(/\\.[^.]*\$/,\"\",gamelistfile);sub(/^.*\\//,\"\",gamelistfile);if(!(gamelistfile in a))print}" \
                 "${tmpfile}" > "${tmpfile}.filtered"
                 if [ -s "${tmpfile}.filtered" ]; then
@@ -3209,10 +3252,10 @@ function filter_list() { # args: core
             fi
         done
         if [ "$applied" -eq 0 ]; then
-            echo -n "No blacklist filter found for '${core}'... " >&2
+            samdebug "No blacklist file found for '${core}'"
         fi
     else
-        echo -n "No blacklist filter found for '${core}'... " >&2
+        samdebug "No blacklist file found for '${core}'"
     fi
 
     cp -f "${tmpfile}" "${session_list}"
