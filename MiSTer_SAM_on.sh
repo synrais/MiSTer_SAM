@@ -1886,12 +1886,6 @@ function check_list() {
         samdebug "filter_list encountered an error"
     fi
 
-    if [ -s "${session_list}" ]; then
-        samdebug "Session list for '${core_type}' contains $(wc -l < "${session_list}") entries"
-    else
-        samdebug "Session list for '${core_type}' is empty after processing"
-    fi
-
     return 0
 }
 
