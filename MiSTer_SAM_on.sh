@@ -1751,7 +1751,7 @@ function ensure_list() {
     local list_file="${dest_dir}/${core_type}_gamelist.txt"
     local build_func
 
-    samdebug "Ensuring gamelist for '${core_type}' in '${dest_dir}'"
+    samdebug "Ensuring gamelist for '${core_type}'"
 
     # If the list already exists with content, we're done.
     if [ -s "${list_file}" ]; then
