@@ -1886,8 +1886,7 @@ function check_list() {
         samdebug "filter_list encountered an error"
     fi
 
-    if [ -s "${session_list}" ]; then
-    else
+    if [ ! -s "${session_list}" ]; then
         samdebug "Session list for '${core_type}' is empty after processing"
     fi
 
@@ -3262,7 +3261,6 @@ function filter_list() { # args: core
     fi
 
     if [[ "${exclude[*]}" ]]; then
-        samdebug "Applying ini exclude list: ${exclude[*]}"
         local summary=()
         for e in "${exclude[@]}"; do
             local count
@@ -3270,7 +3268,7 @@ function filter_list() { # args: core
             summary+=("${e}(${count})")
             grep -viw "$e" "${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}" || true
         done
-        samdebug "Excluded entries matching: ${summary[*]}"
+        samdebug "Excluding INI entries matching: ${summary[*]}"
     else
         samdebug "Ini exclude list is empty, skipping filter."
     fi
