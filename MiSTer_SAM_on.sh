@@ -1260,6 +1260,26 @@ function pick_core() {
     fi
 
     # If it's not a first run, proceed with the standard mode selection.
+
+    # When samindex is building gamelists in the background, limit core
+    # selection to those cores that already have a gamelist available. This
+    # prevents SAM from picking a core whose list is still being generated and
+    # subsequently erroring out.
+    local original_corelisttmp=("${corelisttmp[@]}")
+    if pidof samindex >/dev/null 2>&1; then
+        local available=()
+        local c
+        for c in "${corelisttmp[@]}"; do
+            if [ -s "${gamelistpath}/${c}_gamelist.txt" ]; then
+                available+=("$c")
+            fi
+        done
+        if (( ${#available[@]} )); then
+            corelisttmp=("${available[@]}")
+            samdebug "Restricting core choices to available gamelists: ${corelisttmp[*]}"
+        fi
+    fi
+
     if [[ "$coreweight" == "yes" ]]; then
         pick_core_weighted
     elif [[ "$samvideo" == "yes" ]]; then
@@ -1267,6 +1287,9 @@ function pick_core() {
     else
         pick_core_standard
     fi
+
+    # Restore full core list for subsequent operations
+    corelisttmp=("${original_corelisttmp[@]}")
 
     if [[ -z "$nextcore" ]]; then
         samdebug "ERROR: nextcore empty after selection."
