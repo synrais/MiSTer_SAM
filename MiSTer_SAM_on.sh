@@ -1597,6 +1597,7 @@ function build_mra_list() {
     fi
 
     # 3. Build the list directly into the destination file using find.
+    find "${mra_path}" -type f -iname "*.mra" | sort > "${output_file}"
     local game_count
     game_count="$(wc -l < "${output_file}")"
     samdebug "Created ${core_type} MRA gamelist in '${dest_dir}' with ${game_count} entries."
