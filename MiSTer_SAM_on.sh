@@ -3382,7 +3382,7 @@ function samdebug() {
     case "$msg" in
         ":flush_gamelists")
             if (( ${#samdebug_ensure[@]} )); then
-                _samdebug_emit "Ensuring gamelist for '${samdebug_ensure[*]}' in '${samdebug_ensure_dir}'"
+                _samdebug_emit "Ensuring gamelist for '${samdebug_ensure[*]}'"
             fi
             if (( ${#samdebug_existing[@]} )); then
                 _samdebug_emit "Using existing gamelists for '${samdebug_existing[*]}'"
