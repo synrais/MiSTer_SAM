@@ -3254,10 +3254,14 @@ function filter_list() { # args: core
 
     if [[ "${exclude[*]}" ]]; then
         samdebug "Applying ini exclude list: ${exclude[*]}"
+        local summary=()
         for e in "${exclude[@]}"; do
-	            samdebug "Excluding entries matching '$e'"
+            local count
+            count=$(grep -iwc "$e" "${tmpfile}" || true)
+            summary+=("${e}(${count})")
             grep -viw "$e" "${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}" || true
         done
+        samdebug "Excluded entries matching: ${summary[*]}"
     else
         samdebug "Ini exclude list is empty, skipping filter."
     fi
