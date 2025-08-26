@@ -2543,7 +2543,6 @@ function discover_lists() {
             fname="${file##*/}"
             core="${fname%%_*}"
             CORE_RATED[$core]+="$fname "
-            samdebug "Found rated list: $fname"
         done
     fi
     if [[ -d "${gamelistpath}" ]]; then
@@ -2552,7 +2551,6 @@ function discover_lists() {
             fname="${file##*/}"
             core="${fname%%_*}"
             CORE_BLACKLIST[$core]+="$fname "
-            samdebug "Found blacklist: $fname"
         done
         for file in "${gamelistpath}"/*_tvc.txt; do
             [[ -e "$file" ]] || continue
@@ -2560,7 +2558,6 @@ function discover_lists() {
             core="${fname%%_*}"
             # Default search term to core name if not predefined
             SV_TVC[$core]="${SV_TVC[$core]:-$core}"
-            samdebug "Found TVC list: $fname"
         done
     fi
 
