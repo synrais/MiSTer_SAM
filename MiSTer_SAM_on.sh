@@ -1237,16 +1237,26 @@ function pick_core() {
     gamelist_count=$(find "$gamelistpath" -maxdepth 1 -type f -name '*_gamelist.txt' | wc -l)
 
     if [ "$gamelist_count" -eq 0 ]; then
-        samdebug "First run detected (no gamelists). Prioritizing Arcade core."
-        # As a safety check, ensure 'arcade' is an available core.
-        if [[ " ${corelistall[*]} " =~ " arcade " ]]; then
+        samdebug "First run detected (no gamelists)."
+
+        local firstcore="${corelist[0]}"
+        if [[ -n "$firstcore" ]] && ensure_list "$firstcore" "$gamelistpath"; then
+            nextcore="$firstcore"
+            samdebug "Selected initial core: ${firstcore}"
+            create_all_gamelists
+            return
+        fi
+
+        samdebug "Failed to build gamelist for ${firstcore:-<none>}. Trying arcade."
+        if ensure_list "arcade" "$gamelistpath"; then
             nextcore="arcade"
             samdebug "Selected initial core: arcade"
-			create_all_gamelists
-            return # Exit the function immediately
-        else
-            samdebug "Arcade core not available. Falling back to normal selection."
+            create_all_gamelists
+            return
         fi
+
+        samdebug "ERROR: Unable to build initial gamelists."
+        exit 1
     fi
 
     # If it's not a first run, proceed with the standard mode selection.
@@ -1258,10 +1268,9 @@ function pick_core() {
         pick_core_standard
     fi
 
-    # Fallback in case a selection function failed
     if [[ -z "$nextcore" ]]; then
-        samdebug "nextcore empty. Using arcade core as fallback."
-        nextcore="arcade"
+        samdebug "ERROR: nextcore empty after selection."
+        exit 1
     fi
 }
 
