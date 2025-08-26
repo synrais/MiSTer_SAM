@@ -3187,6 +3187,10 @@ function filter_list() { # args: core
     # Always start with a fresh copy of the master list in our working file.
     cp -f "${master_list}" "${tmpfile}"
 
+	local before_count
+	before_count=$(wc -l < "${tmpfile}")
+	samdebug "Session list for '${core}' before filtering: ${before_count} entries"
+
     # --- Each filter now reads from $tmpfile and writes its output back to $tmpfile ---
     # --- ALL informational 'echo' commands are redirected to stderr (>&2) ---
 
