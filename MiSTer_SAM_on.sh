@@ -635,22 +635,6 @@ normalize_ini_bools() {
     done < "${samini_file}"
 }
 
-# Remove invalid cores from a core list array
-sanitize_corelist_array() { # sanitize_corelist_array arrayname
-       local -n list=$1
-       local core
-       local -a valid=()
-       for core in "${list[@]}"; do
-               if [[ -v CORE_PRETTY["$core"] ]]; then
-                       valid+=("$core")
-               else
-                       echo "Unknown core \"$core\" in corelist - skipping"
-                       samdebug "Invalid core $core removed from corelist"
-               fi
-       done
-       list=("${valid[@]}")
-}
-
 # Read INI
 function read_samini() {
 	if [ ! -f "${samini_file}" ]; then
@@ -665,12 +649,20 @@ function read_samini() {
         normalize_ini_bools
         update_pathfilters
 
-       #corelist=("$(echo "${corelist[@]}" | tr ',' ' ' | tr -s ' ')")
-        IFS=',' read -ra corelist <<< "${corelist}"
-        IFS=',' read -ra corelistall <<< "${corelistall}"
+        #corelist=("$(echo "${corelist[@]}" | tr ',' ' ' | tr -s ' ')")
+       IFS=',' read -ra corelist <<< "${corelist}"
+       IFS=',' read -ra corelistall <<< "${corelistall}"
 
-        sanitize_corelist_array corelist
-        sanitize_corelist_array corelistall
+       # Remove any unregistered cores from the list to avoid failures
+       local -a tmp_corelist=()
+       for core in "${corelist[@]}"; do
+               if [[ -v CORE_PRETTY["$core"] ]]; then
+                       tmp_corelist+=("$core")
+               else
+                       samdebug "Unknown core '$core' in corelist - skipping"
+               fi
+       done
+       corelist=("${tmp_corelist[@]}")
 
       for var in ${!skipmessage_input_*}; do
               core=${var#skipmessage_input_}
