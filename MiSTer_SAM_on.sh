@@ -3235,18 +3235,19 @@ function filter_list() { # args: core
         }' "${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}"
     else
         awk -F'/' '!seen[$NF]++' "${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}"
-    fi
-	if [ -s "${gamelistpath}/${core}_gamelist_exclude.txt" ]; then
-		echo "Applying category excludelist for '${core}'..." >&2
-		awk 'FNR==NR{a[$0];next} !($0 in a)' "${gamelistpath}/${core}_gamelist_exclude.txt" "${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}"
-	else
-		samdebug "Excludelist for '${core}' is empty, skipping filter." >&2
-	fi
-    if [ -f "${gamelistpath}/${core}_excludelist.txt" ]; then
-        echo "Applying standard excludelist for '${core}'..." >&2
-        awk -v EXCL="${gamelistpath}/${core}_excludelist.txt" 'BEGIN{while(getline line<EXCL){raw[line]=1;name=line;sub(/\.[^.]*$/,"",name);sub(/^.*\//,"",name);names[name]=1}close(EXCL)}{file=$0;base=file;sub(/\.[^.]*$/,"",base);sub(/^.*\//,"",base);if(file in raw||base in names)next;print}' \
-        "${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}"
-    fi
+if [ -s "${gamelistpath}/${core}_gamelist_exclude.txt" ]; then
+echo "Applying category excludelist for '${core}'..." >&2
+awk 'FNR==NR{a[$0];next} !($0 in a)' "${gamelistpath}/${core}_gamelist_exclude.txt" "${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}"
+else
+samdebug "No category excludelist found for '${core}'" >&2
+fi
+if [ -s "${gamelistpath}/${core}_excludelist.txt" ]; then
+echo "Applying standard excludelist for '${core}'..." >&2
+awk -v EXCL="${gamelistpath}/${core}_excludelist.txt" 'BEGIN{while(getline line<EXCL){raw[line]=1;name=line;sub(/\.[^.]*$/,"",name);sub(/^.*\//,"",name);names[name]=1}close(EXCL)}{file=$0;base=file;sub(/\.[^.]*$/,"",base);sub(/^.*\//,"",base);if(file in raw||base in names)next;print}' \
+"${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}"
+else
+samdebug "No excludelist file found for '${core}'" >&2
+fi
 
     if [ "${rating}" != "no" ]; then
         apply_ratings_filter "${core}" "${tmpfile}"
@@ -3269,7 +3270,7 @@ function filter_list() { # args: core
     if [ "${disable_blacklist}" == "no" ] && [[ -n "${CORE_BLACKLIST[$core]}" ]]; then
         local applied=0
         for bfile in ${CORE_BLACKLIST[$core]}; do
-            if [ -f "${gamelistpath}/$bfile" ]; then
+            if [ -s "${gamelistpath}/$bfile" ]; then
                 samdebug "Applying static screen blacklist for '${core}' ($bfile)"
                 awk "BEGIN{while(getline<\"${gamelistpath}/$bfile\"){a[\$0]=1}} {gamelistfile=\$0;sub(/\\.[^.]*\$/,\"\",gamelistfile);sub(/^.*\\//,\"\",gamelistfile);if(!(gamelistfile in a))print}" \
                 "${tmpfile}" > "${tmpfile}.filtered"
