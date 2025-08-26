@@ -129,7 +129,7 @@ function init_vars() {
 	declare -g sampid="${$}"
 	declare -g samprocess
 	samprocess="$(basename -- "${0}")"
-	declare -g menuonly="Yes"
+	declare -g menuonly="yes"
 	declare -g key_activity_file="/tmp/.SAM_tmp/SAM_Keyboard_Activity"
 	declare -g joy_activity_file="/tmp/.SAM_tmp/SAM_Joy_Activity"
 	declare -g mouse_activity_file="/tmp/.SAM_tmp/SAM_Mouse_Activity"
@@ -154,25 +154,25 @@ function init_vars() {
     declare -gi gametimer=120
     declare -gl corelist="${DEFAULT_CORELIST}"
     declare -gl corelistall="${DEFAULT_CORELIST}"
-	declare -gl skipmessage="Yes"
+	declare -gl skipmessage="yes"
 	declare -gl disablebootrom="no"
-	declare -gl norepeat="Yes"
-	declare -gl disable_blacklist="No"
+	declare -gl norepeat="yes"
+	declare -gl disable_blacklist="no"
 	declare -gl amigaselect="All"
 	declare -gl m82="no"
 	declare -gl sam_goat_list="no"
-	declare -gl mute="No"
+	declare -gl mute="no"
 	declare -gi update_done=0
 	declare -gl ignore_when_skip="no"
-	declare -gl coreweight="No"
+	declare -gl coreweight="no"
 	declare -gi gamelists_created=0
-	declare -gl playcurrentgame="No"
-	declare -gl kids_safe="No"
-	declare -gl rating="No"
+	declare -gl playcurrentgame="no"
+	declare -gl kids_safe="no"
+	declare -gl rating="no"
 	declare -gl dupe_mode="normal"
-	declare -gl listenmouse="Yes"
-	declare -gl listenkeyboard="Yes"
-	declare -gl listenjoy="Yes"
+	declare -gl listenmouse="yes"
+	declare -gl listenkeyboard="yes"
+	declare -gl listenjoy="yes"
  	declare -gl mgls_dirs=""
 	declare -g repository_url="https://github.com/mrchrisster/MiSTer_SAM"
 	declare -g branch="main"
@@ -183,29 +183,29 @@ function init_vars() {
     declare -gA CORE_AUTO_INPUTS=()
 	declare -g userstartup="/media/fat/linux/user-startup.sh"
 	declare -g userstartuptpl="/media/fat/linux/_user-startup.sh"
-	declare -gl useneogeotitles="Yes"
+	declare -gl useneogeotitles="yes"
 	declare -gl arcadeorient
-	declare -gl checkzipsondisk="No"
- 	declare -gl force_zip_scan="No"
-  	declare -gl check_for_new_games="Yes"
-    declare -gl update_gamelists_during_play="No"
+	declare -gl checkzipsondisk="no"
+ 	declare -gl force_zip_scan="no"
+  	declare -gl check_for_new_games="yes"
+    declare -gl update_gamelists_during_play="no"
 	declare -gi bootsleep="60"
 	declare -gi totalgamecount		
 	# ======== DEBUG VARIABLES ========
-    declare -gl samdebug="No"
-    declare -gl samdebuglog="No"
+    declare -gl samdebug="no"
+    declare -gl samdebuglog="no"
     declare -ga samdebug_ensure=()
     declare -ga samdebug_existing=()
     declare -g samdebug_ensure_dir=""
     # ======== BGM =======
-    declare -gl bgm="No"
-	declare -gl bgmplay="Yes"
-	declare -gl bgmstop="Yes"
+    declare -gl bgm="no"
+	declare -gl bgmplay="yes"
+	declare -gl bgmstop="yes"
 	declare -gi gvoladjust="0"
 	
 	# ======== TTY2OLED =======
 	declare -g TTY_cmd_pipe="${mrsamtmp}/TTY_cmd_pipe"
-	declare -gl ttyenable="No"
+	declare -gl ttyenable="no"
 	declare -gi ttyupdate_pause=10
 	declare -g tty_currentinfo_file=${mrsamtmp}/tty_currentinfo
 	declare -g tty_sleepfile="/tmp/tty2oled_sleep"
@@ -1076,7 +1076,7 @@ function next_core() { # next_core (core)
 	fi
 	
     # Check if new roms got added
-    if [[ "$check_for_new_games" == "Yes" ]]; then
+    if [[ "$check_for_new_games" == "yes" ]]; then
             check_list_update ${nextcore}
     fi
 	
@@ -1928,7 +1928,7 @@ function create_all_gamelists() {
 function schedule_gamelist_updates() {
     local core
     samdebug "Scheduling gamelist update checks"
-    if [[ "$check_for_new_games" != "Yes" ]]; then
+    if [[ "$check_for_new_games" != "yes" ]]; then
         samdebug "New game check disabled"
         return
     fi
@@ -1939,7 +1939,7 @@ function schedule_gamelist_updates() {
 }
 
 function check_list_update() {
-    [[ "$check_for_new_games" != "Yes" ]] && return
+    [[ "$check_for_new_games" != "yes" ]] && return
     local core="$1"
     local orig="${gamelistpath}/${core}_gamelist.txt"
     local compdir="${gamelistpathtmp}/comp"
@@ -3159,11 +3159,11 @@ function check_zips() { # check_zips core
                         if [[ "${result}" ]]; then
                                 samdebug "Found new zip file[s]: ${result##*/}"
                                 build_gamelist "${1}"
-                                force_zip_scan="No"
+                                force_zip_scan="no"
                                 return
                         fi
                 fi
-                force_zip_scan="No"
+                force_zip_scan="no"
         fi
 	fi
 	#samdebug "Done."
@@ -4361,7 +4361,7 @@ init_data
 
 discover_lists
 
-if [[ "$update_gamelists_during_play" == "Yes" ]]; then
+if [[ "$update_gamelists_during_play" == "yes" ]]; then
         schedule_gamelist_updates
 fi
 
