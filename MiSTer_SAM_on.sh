@@ -33,11 +33,10 @@ trap '' SIGHUP
 # ======== CORE DEFINITIONS ========
 declare -A CORE_PRETTY CORE_EXT CORE_PATH_RBF CORE_LAUNCH TTY2OLED_PIC_NAME MGL_CORE MGL_SETNAME PATHFILTER MGL_TYPE CORE_RATED CORE_BLACKLIST
 declare -iA MGL_DELAY MGL_INDEX
-declare -a RATED_FILES BLACKLIST_FILES
 corelist_array=()
 
 register_core() {
-    local id="$1" pretty="$2" ext="$3" rbf="$4" launch="$5" tty="$6" mgl_core="$7" mgl_setname="$8" mgl_delay="$9" mgl_index="${10}" mgl_type="${11}" rated="${12}" blacklist="${13}"
+    local id="$1" pretty="$2" ext="$3" rbf="$4" launch="$5" tty="$6" mgl_core="$7" mgl_setname="$8" mgl_delay="$9" mgl_index="${10}" mgl_type="${11}"
     CORE_PRETTY[$id]="$pretty"
     CORE_EXT[$id]="$ext"
     CORE_PATH_RBF[$id]="$rbf"
@@ -49,18 +48,6 @@ register_core() {
     MGL_INDEX[$id]="$mgl_index"
     MGL_TYPE[$id]="$mgl_type"
     PATHFILTER[$id]="${id}pathfilter"
-    if [[ -n "$rated" ]]; then
-        CORE_RATED[$id]="$rated"
-        for f in $rated; do
-            RATED_FILES+=("$f")
-        done
-    fi
-    if [[ -n "$blacklist" ]]; then
-        CORE_BLACKLIST[$id]="$blacklist"
-        for f in $blacklist; do
-            BLACKLIST_FILES+=("$f")
-        done
-    fi
     corelist_array+=("$id")
 }
 # Core registration (case sensitive)
@@ -77,46 +64,46 @@ register_core() {
 #   mgl_type   : type attribute for the MGL <file> entry
 #   rated      : rated.txt filename
 #   blacklist  : blacklist.txt filename
-# <id> <pretty> <ext> <rbf_path> <launch> <tty_pic> <mgl_core> <mgl_setname> <mgl_delay> <mgl_index> <mgl_type> <rated> <blacklist>
-register_core "amiga" "Commodore Amiga" "" "_Computer" "Minimig" "Minimig" "Minimig" "" 1 0 "f" "amiga_rated.txt" "amiga_blacklist.txt"
-register_core "amigacd32" "Commodore Amiga CD32" "chd,cue" "_Computer" "Minimig" "Minimig" "Minimig" "AmigaCD32" 1 0 "f" "" ""
-register_core "ao486" "PC 486 DX-100" "mgl" "_Computer" "ao486" "ao486" "ao486" "" 0 2 "s" "ao486_rated.txt" ""
-register_core "arcade" "MiSTer Arcade" "mra" "_Arcade" "Arcade" "Arcade" "Arcade" "" 2 0 "f" "arcade_rated.txt" "arcade_blacklist.txt"
-register_core "atari2600" "Atari 2600" "a26" "_Console" "ATARI7800" "ATARI2600" "ATARI7800" "" 1 0 "f" "" ""
-register_core "atari5200" "Atari 5200" "a52,car" "_Console" "ATARI5200" "ATARI5200" "ATARI5200" "" 1 1 "f" "" ""
-register_core "atari7800" "Atari 7800" "a78" "_Console" "ATARI7800" "ATARI7800" "ATARI7800" "" 1 1 "f" "" ""
-register_core "atarilynx" "Atari Lynx" "lnx" "_Console" "AtariLynx" "AtariLynx" "AtariLynx" "" 1 1 "f" "" ""
-register_core "c64" "Commodore 64" "crt,prg" "_Computer" "C64" "C64" "C64" "" 1 1 "f" "" ""
-register_core "cdi" "Philips CD-i" "chd,cue" "_Console" "CDi" "CD-i" "CDi" "" 1 1 "s" "" ""
-register_core "coco2" "TRS-80 Color Computer 2" "ccc" "_Computer" "CoCo2" "CoCo2" "CoCo2" "" 1 1 "f" "" ""
-register_core "colecovision" "ColecoVision" "col" "_Console" "ColecoVision" "ColecoVision" "ColecoVision" "" 1 1 "f" "" ""
-register_core "fds" "Nintendo Disk System" "fds" "_Console" "NES" "fds" "NES" "" 2 0 "f" "fds_rated.txt" "fds_blacklist.txt"
-register_core "gb" "Nintendo Game Boy" "gb" "_Console" "GAMEBOY" "GAMEBOY" "GAMEBOY" "" 2 0 "f" "gb_rated.txt" ""
-register_core "gba" "Nintendo Game Boy Advance" "gba" "_Console" "GBA" "GBA" "GBA" "" 2 0 "f" "gba_rated.txt" "gba_blacklist.txt"
-register_core "gbc" "Nintendo Game Boy Color" "gbc" "_Console" "GAMEBOY" "GAMEBOY" "GAMEBOY" "GBC" 2 0 "f" "gbc_rated.txt" ""
-register_core "genesis" "Sega Genesis / Megadrive" "md,gen" "_Console" "MEGADRIVE" "MegaDrive" "MegaDrive" "" 1 0 "f" "genesis_rated.txt" "genesis_blacklist.txt"
-register_core "gg" "Sega Game Gear" "gg" "_Console" "SMS" "gamegear" "SMS" "GameGear" 1 2 "f" "gg_rated.txt" ""
-register_core "intellivision" "Mattel Intellivision" "int,bin,rom" "_Console" "Intellivision" "Intellivision" "Intellivision" "" 1 1 "f" "" ""
-register_core "jaguar" "Atari Jaguar" "j64,rom,bin,jag" "_Console" "Jaguar" "Jaguar" "Jaguar" "" 1 1 "f" "" ""
-register_core "megacd" "Sega CD / Mega CD" "chd,cue" "_Console" "MegaCD" "MegaCD" "MegaCD" "" 1 0 "s" "megacd_rated.txt" "megacd_blacklist.txt"
-register_core "mgls" "Custom MGL" "mgl" "" "MGL" "MGL" "" "" 1 0 "f" "" ""
-register_core "n64" "Nintendo N64" "n64,z64" "_Console" "N64" "N64" "N64" "" 1 1 "f" "n64_rated.txt n64_mature.txt" "n64_blacklist.txt"
-register_core "neogeo" "SNK NeoGeo" "neo" "_Console" "NEOGEO" "NEOGEO" "NEOGEO" "" 1 1 "f" "neogeo_rated.txt" "neogeo_blacklist.txt"
-register_core "neogeocd" "SNK NeoGeo CD" "cue,chd" "_Console" "NEOGEO" "NEOGEO" "NEOGEO" "" 1 1 "s" "" ""
-register_core "nes" "Nintendo Entertainment System" "nes" "_Console" "NES" "NES" "NES" "" 2 0 "f" "nes_rated.txt" "nes_blacklist.txt"
-register_core "psx" "Sony Playstation" "chd,cue,exe" "_Console" "PSX" "PSX" "PSX" "" 1 1 "s" "psx_rated.txt" "psx_blacklist.txt"
-register_core "s32x" "Sega 32x" "32x" "_Console" "S32X" "S32X" "S32X" "" 1 0 "f" "" "s32x_blacklist.txt"
-register_core "saturn" "Sega Saturn" "cue,chd" "_Console" "SATURN" "SATURN" "SATURN" "" 1 1 "s" "saturn_rated.txt saturn_mature.txt" ""
-register_core "sgb" "Super Gameboy" "gb,gbc" "_Console" "SGB" "SGB" "SGB" "" 1 1 "f" "" ""
-register_core "sms" "Sega Master System" "sms,sg" "_Console" "SMS" "SMS" "SMS" "" 1 1 "f" "sms_rated.txt" "sms_blacklist.txt"
-register_core "snes" "Super Nintendo" "sfc,smc" "_Console" "SNES" "SNES" "SNES" "" 2 0 "f" "snes_rated.txt" "snes_blacklist.txt"
-register_core "stv" "Sega Titan Video" "" "_Arcade" "S-TV" "S-TV" "S-TV" "" 2 0 "f" "" ""
-register_core "tgfx16" "NEC TurboGrafx-16 " "pce,sgx" "_Console" "TGFX16" "TGFX16" "TurboGrafx16" "" 1 1 "f" "tgfx16_rated.txt" "tgfx16_blacklist.txt"
-register_core "tgfx16cd" "NEC TurboGrafx-16 CD" "chd,cue" "_Console" "TGFX16" "TGFX16" "TurboGrafx16" "" 1 0 "s" "tgfx16cd_rated.txt tgfx16cd_mature.txt" "tgfx16cd_blacklist.txt"
-register_core "vectrex" "GCE Vectrex" "bin" "_Console" "Vectrex" "Vectrex" "Vectrex" "" 1 1 "f" "" ""
-register_core "wonderswan" "Bandai WonderSwan" "ws" "_Console" "WonderSwan" "WonderSwan" "WonderSwan" "" 1 1 "f" "" ""
-register_core "wonderswancolor" "Bandai WonderSwan Color" "wsc" "_Console" "WonderSwan" "WonderSwan" "WonderSwan" "WonderSwanColor" 1 1 "f" "" ""
-register_core "x68k" "Sharp X68000" "mgl" "_Computer" "X68000" "X68000" "X68000" "" 1 2 "s" "" ""
+# <id> <pretty> <ext> <rbf_path> <launch> <tty_pic> <mgl_core> <mgl_setname> <mgl_delay> <mgl_index> <mgl_type>
+register_core "amiga" "Commodore Amiga" "" "_Computer" "Minimig" "Minimig" "Minimig" "" 1 0 "f"
+register_core "amigacd32" "Commodore Amiga CD32" "chd,cue" "_Computer" "Minimig" "Minimig" "Minimig" "AmigaCD32" 1 0 "f"
+register_core "ao486" "PC 486 DX-100" "mgl" "_Computer" "ao486" "ao486" "ao486" "" 0 2 "s"
+register_core "arcade" "MiSTer Arcade" "mra" "_Arcade" "Arcade" "Arcade" "Arcade" "" 2 0 "f"
+register_core "atari2600" "Atari 2600" "a26" "_Console" "ATARI7800" "ATARI2600" "ATARI7800" "" 1 0 "f"
+register_core "atari5200" "Atari 5200" "a52,car" "_Console" "ATARI5200" "ATARI5200" "ATARI5200" "" 1 1 "f"
+register_core "atari7800" "Atari 7800" "a78" "_Console" "ATARI7800" "ATARI7800" "ATARI7800" "" 1 1 "f"
+register_core "atarilynx" "Atari Lynx" "lnx" "_Console" "AtariLynx" "AtariLynx" "AtariLynx" "" 1 1 "f"
+register_core "c64" "Commodore 64" "crt,prg" "_Computer" "C64" "C64" "C64" "" 1 1 "f"
+register_core "cdi" "Philips CD-i" "chd,cue" "_Console" "CDi" "CD-i" "CDi" "" 1 1 "s"
+register_core "coco2" "TRS-80 Color Computer 2" "ccc" "_Computer" "CoCo2" "CoCo2" "CoCo2" "" 1 1 "f"
+register_core "colecovision" "ColecoVision" "col" "_Console" "ColecoVision" "ColecoVision" "ColecoVision" "" 1 1 "f"
+register_core "fds" "Nintendo Disk System" "fds" "_Console" "NES" "fds" "NES" "" 2 0 "f"
+register_core "gb" "Nintendo Game Boy" "gb" "_Console" "GAMEBOY" "GAMEBOY" "GAMEBOY" "" 2 0 "f"
+register_core "gba" "Nintendo Game Boy Advance" "gba" "_Console" "GBA" "GBA" "GBA" "" 2 0 "f"
+register_core "gbc" "Nintendo Game Boy Color" "gbc" "_Console" "GAMEBOY" "GAMEBOY" "GAMEBOY" "GBC" 2 0 "f"
+register_core "genesis" "Sega Genesis / Megadrive" "md,gen" "_Console" "MEGADRIVE" "MegaDrive" "MegaDrive" "" 1 0 "f"
+register_core "gg" "Sega Game Gear" "gg" "_Console" "SMS" "gamegear" "SMS" "GameGear" 1 2 "f"
+register_core "intellivision" "Mattel Intellivision" "int,bin,rom" "_Console" "Intellivision" "Intellivision" "Intellivision" "" 1 1 "f"
+register_core "jaguar" "Atari Jaguar" "j64,rom,bin,jag" "_Console" "Jaguar" "Jaguar" "Jaguar" "" 1 1 "f"
+register_core "megacd" "Sega CD / Mega CD" "chd,cue" "_Console" "MegaCD" "MegaCD" "MegaCD" "" 1 0 "s"
+register_core "mgls" "Custom MGL" "mgl" "" "MGL" "MGL" "" "" 1 0 "f"
+register_core "n64" "Nintendo N64" "n64,z64" "_Console" "N64" "N64" "N64" "" 1 1 "f"
+register_core "neogeo" "SNK NeoGeo" "neo" "_Console" "NEOGEO" "NEOGEO" "NEOGEO" "" 1 1 "f"
+register_core "neogeocd" "SNK NeoGeo CD" "cue,chd" "_Console" "NEOGEO" "NEOGEO" "NEOGEO" "" 1 1 "s"
+register_core "nes" "Nintendo Entertainment System" "nes" "_Console" "NES" "NES" "NES" "" 2 0 "f"
+register_core "psx" "Sony Playstation" "chd,cue,exe" "_Console" "PSX" "PSX" "PSX" "" 1 1 "s"
+register_core "s32x" "Sega 32x" "32x" "_Console" "S32X" "S32X" "S32X" "" 1 0 "f"
+register_core "saturn" "Sega Saturn" "cue,chd" "_Console" "SATURN" "SATURN" "SATURN" "" 1 1 "s"
+register_core "sgb" "Super Gameboy" "gb,gbc" "_Console" "SGB" "SGB" "SGB" "" 1 1 "f"
+register_core "sms" "Sega Master System" "sms,sg" "_Console" "SMS" "SMS" "SMS" "" 1 1 "f"
+register_core "snes" "Super Nintendo" "sfc,smc" "_Console" "SNES" "SNES" "SNES" "" 2 0 "f"
+register_core "stv" "Sega Titan Video" "" "_Arcade" "S-TV" "S-TV" "S-TV" "" 2 0 "f"
+register_core "tgfx16" "NEC TurboGrafx-16 " "pce,sgx" "_Console" "TGFX16" "TGFX16" "TurboGrafx16" "" 1 1 "f"
+register_core "tgfx16cd" "NEC TurboGrafx-16 CD" "chd,cue" "_Console" "TGFX16" "TGFX16" "TurboGrafx16" "" 1 0 "s"
+register_core "vectrex" "GCE Vectrex" "bin" "_Console" "Vectrex" "Vectrex" "Vectrex" "" 1 1 "f"
+register_core "wonderswan" "Bandai WonderSwan" "ws" "_Console" "WonderSwan" "WonderSwan" "WonderSwan" "" 1 1 "f"
+register_core "wonderswancolor" "Bandai WonderSwan Color" "wsc" "_Console" "WonderSwan" "WonderSwan" "WonderSwan" "WonderSwanColor" 1 1 "f"
+register_core "x68k" "Sharp X68000" "mgl" "_Computer" "X68000" "X68000" "X68000" "" 1 2 "s"
 
 DEFAULT_CORELIST=$(IFS=,; echo "${corelist_array[*]}")
 
@@ -2491,6 +2478,41 @@ function init_paths() {
 	touch "${tmpfile2}"
 }
 
+# Dynamically discover rated, blacklist and TVC lists
+function discover_lists() {
+    # Reset arrays
+    CORE_RATED=()
+    CORE_BLACKLIST=()
+    # Preserve existing SV_TVC search terms but ensure the array exists
+    declare -gA SV_TVC
+    if [[ -d "${mrsampath}/SAM_Rated" ]]; then
+        for file in "${mrsampath}/SAM_Rated"/*.txt; do
+            [[ -e "$file" ]] || continue
+            fname="${file##*/}"
+            core="${fname%%_*}"
+            CORE_RATED[$core]+="$fname "
+            samdebug "Found rated list: $fname"
+        done
+    fi
+    if [[ -d "${gamelistpath}" ]]; then
+        for file in "${gamelistpath}"/*_blacklist.txt; do
+            [[ -e "$file" ]] || continue
+            fname="${file##*/}"
+            core="${fname%%_*}"
+            CORE_BLACKLIST[$core]+="$fname "
+            samdebug "Found blacklist: $fname"
+        done
+        for file in "${gamelistpath}"/*_tvc.txt; do
+            [[ -e "$file" ]] || continue
+            fname="${file##*/}"
+            core="${fname%%_*}"
+            # Default search term to core name if not predefined
+            SV_TVC[$core]="${SV_TVC[$core]:-$core}"
+            samdebug "Found TVC list: $fname"
+        done
+    fi
+}
+
 function sam_prep() {
 	
 	# samvideo and ratings filter can't both be set
@@ -2520,43 +2542,25 @@ function sam_prep() {
 		rating="kids"
 	fi
 
-	if [ "${rating}" != "no" ]; then	
-	    local missing=()
+    if [ "${rating}" != "no" ]; then
+            mkdir -p "${mrsampath}/SAM_Rated"
+            get_ratedlist
 
-		# make sure the target dir exists
-		mkdir -p "${mrsampath}/SAM_Rated"
-		# check each expected file
-		for f in "${RATED_FILES[@]}"; do
-			if [[ ! -f "${mrsampath}/SAM_Rated/$f" ]]; then
-				missing+=( "$f" )
-			fi
-		done
-		if (( ${#missing[@]} )); then
-			echo "Missing rating lists: ${missing[*]}"
-			echo "Downloading..."
-			if ! get_ratedlist; then
-				echo "Ratings Filter failed downloading."
-				return 1
-			fi
-		else
-			echo "All rating lists present."
-		fi
-
-		#Set corelist to only include cores with rated lists
-		# build glr from the files on disk
-		if [ "${rating}" == "kids" ]; then
-			readarray -t glr < <(
-			  find "${mrsampath}/SAM_Rated" -name "*_rated.txt" \
-				| awk -F'/' '{print $NF}' \
-				| awk -F'_'  '{print $1}'
-			)
-		else
-			readarray -t glr < <(
-			  find "${mrsampath}/SAM_Rated" -name "*_mature.txt" \
-				| awk -F'/' '{print $NF}' \
-				| awk -F'_'  '{print $1}'
-			)
-		fi
+            #Set corelist to only include cores with rated lists
+            # build glr from the files on disk
+            if [ "${rating}" == "kids" ]; then
+                    readarray -t glr < <(
+                      find "${mrsampath}/SAM_Rated" -name "*_rated.txt" \
+                            | awk -F'/' '{print $NF}' \
+                            | awk -F'_'  '{print $1}'
+                    )
+            else
+                    readarray -t glr < <(
+                      find "${mrsampath}/SAM_Rated" -name "*_mature.txt" \
+                            | awk -F'/' '{print $NF}' \
+                            | awk -F'_'  '{print $1}'
+                    )
+            fi
 
 		# intersect glr with corelist
 		clr=()
@@ -3689,12 +3693,13 @@ function samvideo_tvc() {
     # Setting corelist to available commercials
     unset TVC_LIST
     unset SV_TVC_CL
-    for g in "${!SV_TVC[@]}"; do 
-        for c in "${corelist[@]}"; do 
-            if [[ "$c" == "$g" ]]; then 
-                SV_TVC_CL+=("$c")
-            fi
-        done 
+    for file in "${gamelistpath}"/*_tvc.txt; do
+        [[ -e "$file" ]] || continue
+        core="${file##*/}"
+        core="${core%%_*}"
+        for c in "${corelist[@]}"; do
+            [[ "$c" == "$core" ]] && SV_TVC_CL+=("$c")
+        done
     done
     samdebug "samvideo corelist: ${SV_TVC_CL[@]}"
     pick_core SV_TVC_CL
@@ -3735,10 +3740,11 @@ function samvideo_tvc() {
     done
 
     echo $nextcore > /tmp/.SAM_tmp/sv_core
-    samdebug "Searching for ${SV_TVC[$nextcore]}"
+    search_term="${SV_TVC[$nextcore]:-$nextcore}"
+    samdebug "Searching for ${search_term}"
     if [ -z "${tvc_selected}" ]; then
         echo "Couldn't find TVC list. Selecting random game from system"
-        sv_selected="$(cat ${samvideo_list} | grep -i "${SV_TVC[$nextcore]}" | shuf --random-source=/dev/urandom | head -1)"
+        sv_selected="$(cat ${samvideo_list} | grep -i "${search_term}" | shuf --random-source=/dev/urandom | head -1)"
     fi
     samdebug "Picked $sv_selected"
 }
@@ -3874,7 +3880,53 @@ function check_and_update() {
     fi
 }
 
+# Similar to check_and_update but only updates when the remote file is larger
+function check_and_update_larger() {
+    local url="$1"
+    local tmp_file="$2"
+    local local_file="$3"
+    local description="$4"
 
+    remote_size=$(curl -sI --location --insecure "$url" | awk '/^Content-Length:/ {size=$2} END {print size}' | tr -d '\r')
+    if [ -z "$remote_size" ]; then
+        echo "Error: Unable to determine the size of $description at $url" >&2
+        return 1
+    fi
+    if [ -f "$local_file" ]; then
+        local_size=$(stat --format="%s" "$local_file")
+    else
+        local_size=0
+    fi
+
+    samdebug "Remote size: $remote_size"
+    samdebug "Local size: $local_size"
+
+    if [ "$remote_size" -gt "$local_size" ]; then
+        echo "Updating $description..."
+        curl_download "$tmp_file" "$url" || return 1
+        mv "$tmp_file" "$local_file" || { echo "Error: Unable to move $tmp_file to $local_file" >&2; return 1; }
+        echo "$description updated successfully."
+        return 2
+    else
+        echo "$description is up-to-date. No update required."
+        return 0
+    fi
+}
+
+function update_lists_from_github() {
+    local subdir="$1"
+    local local_dir="$2"
+    local pattern="$3"
+    local api_url="https://api.github.com/repos/mrchrisster/MiSTer_SAM/contents/.MiSTer_SAM/${subdir}?ref=${branch}"
+    local file_list
+    file_list=$(curl -s "$api_url" | jq -r '.[].name' | grep -E "$pattern" || true)
+    for fname in $file_list; do
+        local remote_url="${raw_base}/.MiSTer_SAM/${subdir}/${fname}"
+        local tmp_file="/tmp/$fname"
+        local local_file="${local_dir}/$fname"
+        check_and_update_larger "$remote_url" "$tmp_file" "$local_file" "$fname"
+    done
+}
 
 
 function get_samstuff() { #get_samstuff file (path)
@@ -3976,14 +4028,9 @@ function get_samvideo() {
 
 
     # Check and update SAM gamelists
-	echo "Checking and updating SAM gamelists..."
-	for key in "${!SV_TVC[@]}"; do
-		local_file="${mrsampath}/SAM_Gamelists/${key}_tvc.txt"
-		tmp_file="/tmp/${key}_tvc.txt"
-		remote_url="${raw_base}/.MiSTer_SAM/SAM_Gamelists/${key}_tvc.txt"
-
-		check_and_update "$remote_url" "$tmp_file" "$local_file" "${key}_tvc gamelist"
-	done
+    echo "Checking and updating SAM gamelists..."
+    update_lists_from_github "SAM_Gamelists" "${mrsampath}/SAM_Gamelists" '_tvc.txt$'
+    discover_lists
 
     echo "Done."
 }
@@ -4024,28 +4071,18 @@ function get_inputmap() {
 
 
 function get_blacklist() {
-    echo "Downloading blacklist files - SAM can auto-detect games with static screens and filter them out..."
-
-    for blacklist_file in "${BLACKLIST_FILES[@]}"; do
-        remote_url="${raw_base}/.MiSTer_SAM/SAM_Gamelists/$blacklist_file"
-        tmp_file="/tmp/$blacklist_file"
-        local_file="${mrsampath}/SAM_Gamelists/$blacklist_file"
-        check_and_update "$remote_url" "$tmp_file" "$local_file" "$blacklist_file"
-    done
-    echo "Blacklist files updated."
+    echo "Checking blacklist and TVC lists..."
+    update_lists_from_github "SAM_Gamelists" "${mrsampath}/SAM_Gamelists" '(_blacklist.txt|_tvc.txt)$'
+    discover_lists
+    echo "Blacklist lists updated."
 }
 
 
 function get_ratedlist() {
-	echo "Downloading lists with kids-friendly games..."
-
-	for rated_file in "${RATED_FILES[@]}"; do
-		remote_url="${raw_base}/.MiSTer_SAM/SAM_Rated/$rated_file"
-		tmp_file="/tmp/$rated_file"
-		local_file="${mrsampath}/SAM_Rated/$rated_file"
-		check_and_update "$remote_url" "$tmp_file" "$local_file" "$rated_file"
-	done
-	echo "Rated lists updated."
+    echo "Checking and updating rated lists..."
+    update_lists_from_github "SAM_Rated" "${mrsampath}/SAM_Rated" '(_rated.txt|_mature.txt)$'
+    discover_lists
+    echo "Rated lists updated."
 }
 
 
@@ -4199,6 +4236,8 @@ read_samini
 init_paths
 
 init_data
+
+discover_lists
 
 if [[ "$update_gamelists_during_play" == "Yes" ]]; then
         schedule_gamelist_updates
