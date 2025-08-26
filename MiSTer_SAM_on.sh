@@ -1528,6 +1528,8 @@ function build_mra_list() {
     local output_file="${dest_dir}/${core_type}_gamelist.txt"
     local mra_path
 
+    samdebug "Building ${core_type} MRA list in ${dest_dir}"
+
     # 1. Determine the correct search path based on the core.
     case "${core_type}" in
         "stv")
@@ -1557,16 +1559,16 @@ function build_mra_list() {
     fi
 
     # 3. Build the list directly into the destination file using find.
-    find "${mra_path}" -not -path '*/.*' -type f -iname "*.mra" > "${output_file}"
-    
-    samdebug "Created ${core_type} MRA gamelist in '${dest_dir}'."
+    local game_count
+    game_count="$(wc -l < "${output_file}")"
+    samdebug "Created ${core_type} MRA gamelist in '${dest_dir}' with ${game_count} entries."
     sync "${output_file}"
 }
 
 function build_mgl_list() {
     # Accept core and destination directory arguments
     local core_type="$1"
-	local dest_dir="${2:-$gamelistpath}"
+    local dest_dir="${2:-$gamelistpath}"
 
     # Define paths, making the output file dynamic
     local search_paths
@@ -1574,6 +1576,8 @@ function build_mgl_list() {
     local game_count
     local existing_paths=()
 
+    samdebug "Building ${core_type} MGL list in ${dest_dir}"
+	
     # Determine which directories to search based on the core
     case "${core_type}" in
        "ao486")
@@ -1629,12 +1633,14 @@ function build_mgl_list() {
 function build_amiga_list() {
     # Accept core and destination directory arguments for consistency
     local core_type="$1"
-	local dest_dir="${2:-$gamelistpath}"
+    local dest_dir="${2:-$gamelistpath}"
 	
     # Define paths; the output file is now dynamic based on dest_dir
     local demos_file="${amigapath}/listings/demos.txt"
     local games_file="${amigapath}/listings/games.txt"
     local output_file="${dest_dir}/${core_type}_gamelist.txt"
+
+    samdebug "Building ${core_type} list in ${dest_dir} (mode: ${amigaselect})"
 
     # Check if the source 'games.txt' exists
     if [ ! -f "${games_file}" ]; then
@@ -1675,7 +1681,7 @@ function build_amiga_list() {
 # General Romfinder
 function build_gamelist() {
     local core="$1"
-	local outdir="${2:-$gamelistpath}"
+    local outdir="${2:-$gamelistpath}"
     local file rc
     local is_initial_build=0
 
@@ -1724,6 +1730,9 @@ function build_gamelist() {
     # Always sort and de-duplicate the final output file, regardless of build type.
     if [[ -f "$file" ]]; then
         sort -u "$file" -o "$file"
+        local game_count
+        game_count="$(wc -l < "$file")"
+        samdebug "Finished building gamelist for ${core} in ${outdir} with ${game_count} entries"
     fi
 
     return 0
@@ -1734,12 +1743,15 @@ function build_gamelist() {
 # Arg 2: Destination directory (e.g., "/path/to/gamelists")
 function ensure_list() {
     local core_type="$1"
-	local dest_dir="${2:-$gamelistpath}"
+    local dest_dir="${2:-$gamelistpath}"
     local list_file="${dest_dir}/${core_type}_gamelist.txt"
     local build_func
 
+    samdebug "Ensuring gamelist for '${core_type}' in '${dest_dir}'"
+
     # If the list already exists with content, we're done.
     if [ -s "${list_file}" ]; then
+        samdebug "Gamelist for '${core_type}' already present in '${dest_dir}'"
         return 0
     fi
 
@@ -1762,6 +1774,10 @@ function ensure_list() {
         samdebug "ERROR: Failed to create or find games for '${core_type}' in '${dest_dir}'." >&2
         return 1
     fi
+
+    local count
+    count="$(wc -l < "${list_file}")"
+    samdebug "Gamelist for '${core_type}' ready in '${dest_dir}' with ${count} entries"
     return 0
 }
 
@@ -1772,6 +1788,8 @@ function check_list() {
     local core_type="$1"
     local mode="$2"
     local session_list="${gamelistpathtmp}/${core_type}_gamelist.txt"
+
+    samdebug "Checking session list for '${core_type}' (mode: ${mode:-standard})"
 
     # 1. Ensure we have Master game list if it doesn't exist. Exit if it fails.
     ensure_list "${core_type}" "${gamelistpath}" || return 1
@@ -1785,7 +1803,8 @@ function check_list() {
 
     # 3. Handle special session lists (GOAT, M82, etc.)
     if [ "${sam_goat_list}" == "yes" ] && [ ! -s "${gamelistpathtmp}/${1}_gamelist.txt" ]; then
-        build_goat_lists
+        samdebug "GOAT mode active – building GOAT lists"
+		build_goat_lists
         return
     fi
 
@@ -1838,12 +1857,19 @@ function check_list() {
     #    special session list (like M82) was created.
     if [ ! -s "${session_list}" ]; then
         cp "${gamelistpath}/${core_type}_gamelist.txt" "${session_list}" 2>/dev/null
+        samdebug "Copied master list to session list for '${core_type}'"
     fi
-	
-	filter_list "${nextcore}"
-	if [ $? -ne 0 ]; then 
-		samdebug "filter_list encountered an error"
-	fi	
+
+    filter_list "${nextcore}"
+    if [ $? -ne 0 ]; then
+        samdebug "filter_list encountered an error"
+    fi
+
+    if [ -s "${session_list}" ]; then
+        samdebug "Session list for '${core_type}' contains $(wc -l < "${session_list}") entries"
+    else
+        samdebug "Session list for '${core_type}' is empty after processing"
+    fi
 
     return 0
 }
@@ -1868,6 +1894,7 @@ function create_all_gamelists() {
             if [[ ! " ${special_cores[*]} " =~ " ${c} " ]]; then
                 # Use the dispatcher to handle the check and call the correct builder.
                 # This is cleaner and respects your modular design.
+                samdebug "Ensuring list for core '${c}'"
                 ensure_list "${c}" "${gamelistpath}"
             fi
         done
@@ -1877,11 +1904,16 @@ function create_all_gamelists() {
 }
 
 function schedule_gamelist_updates() {
-        local core
-		[[ "$check_for_new_games" != "Yes" ]] && return
-        for core in ${corelist//,/ }; do
-                check_list_update "$core"
-        done
+   local core
+    samdebug "Scheduling gamelist update checks"
+    if [[ "$check_for_new_games" != "Yes" ]]; then
+        samdebug "New game check disabled"
+        return
+    fi
+    for core in ${corelist//,/ }; do
+        samdebug "Queueing update check for ${core}"
+        check_list_update "$core"
+    done
 }
 
 function check_list_update() {
@@ -1890,20 +1922,24 @@ function check_list_update() {
     local orig="${gamelistpath}/${core}_gamelist.txt"
     local compdir="${gamelistpathtmp}/comp"
     local comp="${compdir}/${core}_gamelist.txt"
+
+    samdebug "Checking for updates to '${core}' gamelist"
 	
 	# ── only run this check once per core, per session ──
 	local flag_dir="${gamelistpathtmp}/.checked"
 	mkdir -p "$flag_dir"
 	local flag_file="$flag_dir/$core"
-	if [ -e "$flag_file" ]; then
-	    return
-	fi
-	touch "$flag_file"
+        if [ -e "$flag_file" ]; then
+            samdebug "[${core}] Already checked this session. Skipping"
+            return
+        fi
+        touch "$flag_file"
 	
 	# Skip for special modes like M82 that have their own list logic
-	if [[ "$m82" == "yes" ]]; then
-		return 0
-	fi
+        if [[ "$m82" == "yes" ]]; then
+            samdebug "[${core}] Update check skipped in M82 mode"
+            return 0
+        fi
 
     (
 		mkdir -p "$compdir"
@@ -2486,6 +2522,7 @@ function discover_lists() {
     CORE_BLACKLIST=()
     # Preserve existing SV_TVC search terms but ensure the array exists
     declare -gA SV_TVC
+    samdebug "Discovering rated, blacklist and TVC lists"
     if [[ -d "${mrsampath}/SAM_Rated" ]]; then
         for file in "${mrsampath}/SAM_Rated"/*.txt; do
             [[ -e "$file" ]] || continue
@@ -2512,6 +2549,8 @@ function discover_lists() {
             samdebug "Found TVC list: $fname"
         done
     fi
+
+    samdebug "Discovery complete: rated cores: ${!CORE_RATED[*]}, blacklist cores: ${!CORE_BLACKLIST[*]}, TVC cores: ${!SV_TVC[*]}"
 }
 
 function sam_prep() {
@@ -3096,6 +3135,7 @@ function filter_list() { # args: core
         samdebug "Filters for '${core}' already applied this session. Skipping."
         return 0
     fi
+    samdebug "Applying filters to '${core}'"
     # Always start with a fresh copy of the master list in our working file.
     cp -f "${master_list}" "${tmpfile}"
 
@@ -3183,7 +3223,8 @@ function filter_list() { # args: core
         delete_from_corelist "${core}"
         return 1
     fi
-	touch "$flag_file"
+    touch "$flag_file"
+    samdebug "Filtering complete for '${core}' with $(wc -l < "${session_list}") entries"
 
     return 0
 }
