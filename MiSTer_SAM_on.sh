@@ -3259,9 +3259,13 @@ function filter_list() { # args: core
     fi
 
     if [[ "${exclude[*]}" ]]; then
+        samdebug "Applying ini exclude list: ${exclude[*]}"
         for e in "${exclude[@]}"; do
+	            samdebug "Excluding entries matching '$e'"
             grep -viw "$e" "${tmpfile}" > "${tmpfile}.filtered" && mv -f "${tmpfile}.filtered" "${tmpfile}" || true
         done
+    else
+        samdebug "Ini exclude list is empty, skipping filter."
     fi
 
     if [ "${disable_blacklist}" == "no" ] && [[ -n "${CORE_BLACKLIST[$core]}" ]]; then
