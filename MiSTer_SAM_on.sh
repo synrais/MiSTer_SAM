@@ -620,6 +620,21 @@ function init_data() {
 
 # ========= SOUCRCE INI & UPDATE =========
 
+# Normalize Yes/No values from the INI to lowercase
+normalize_ini_bools() {
+    local key val
+    while IFS='=' read -r key _; do
+        key="${key//[[:space:]]/}"
+        [[ -z "$key" || "$key" == \#* || "$key" == \;* ]] && continue
+        val="${!key}"
+        if [[ "$val" =~ ^[Yy][Ee][Ss]$ ]]; then
+            printf -v "$key" 'yes'
+        elif [[ "$val" =~ ^[Nn][Oo]$ ]]; then
+            printf -v "$key" 'no'
+        fi
+    done < "${samini_file}"
+}
+
 # Read INI
 function read_samini() {
 	if [ ! -f "${samini_file}" ]; then
@@ -631,7 +646,7 @@ function read_samini() {
 		fi
 	fi
         source "${samini_file}"
-
+        normalize_ini_bools
         update_pathfilters
 
         #corelist=("$(echo "${corelist[@]}" | tr ',' ' ' | tr -s ' ')")
@@ -2782,10 +2797,11 @@ function sam_enable() { # Enable autoplay
 		echo -e "\n# Startup MiSTer_SAM - Super Attract Mode" >>${userstartup}
 		echo -e "[[ -e ${mrsampath}/MiSTer_SAM_init ]] && ${mrsampath}/MiSTer_SAM_init \$1 &" >>"${userstartup}"
 	fi
-	echo "SAM install complete."
-	echo -e "\n\n\n"
-	source "${samini_file}"
-	echo -ne "\e[1m" SAM will start ${samtimeout} sec. after boot"\e[0m"
+        echo "SAM install complete."
+        echo -e "\n\n\n"
+        source "${samini_file}"
+        normalize_ini_bools
+        echo -ne "\e[1m" SAM will start ${samtimeout} sec. after boot"\e[0m"
 	if [ "${menuonly,,}" == "yes" ]; then
 		echo -ne "\e[1m" in the main menu"\e[0m"
 	else
@@ -3382,7 +3398,9 @@ function samdebug() {
     case "$msg" in
         ":flush_gamelists")
             if (( ${#samdebug_ensure[@]} )); then
-                _samdebug_emit "Ensuring gamelist for '${samdebug_ensure[*]}'"
+                local out="Ensuring gamelist for '${samdebug_ensure[*]}'"
+                [[ -n "$samdebug_ensure_dir" ]] && out+=" in '$samdebug_ensure_dir'"
+                _samdebug_emit "$out"
             fi
             if (( ${#samdebug_existing[@]} )); then
                 _samdebug_emit "Using existing gamelists for '${samdebug_existing[*]}'"
@@ -3394,8 +3412,8 @@ function samdebug() {
             ;;
     esac
 
-    if [[ $msg =~ ^Ensuring\ gamelist\ for\ \'([^\']+)\'\ in\ \'([^\']+)\'$ ]]; then
-        samdebug_ensure_dir="${BASH_REMATCH[2]}"
+    if [[ $msg =~ ^Ensuring\ gamelist\ for\ \'([^\']+)\'(\ in\ \'([^\']+)\')?$ ]]; then
+        [[ -n "${BASH_REMATCH[3]}" ]] && samdebug_ensure_dir="${BASH_REMATCH[3]}"
         samdebug_ensure+=("${BASH_REMATCH[1]}")
         return
     fi
