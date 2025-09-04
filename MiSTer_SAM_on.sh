@@ -3320,7 +3320,6 @@ function filter_list() { # args: core
         local applied=0
         for bfile in ${CORE_BLACKLIST[$core]}; do
             if [ -s "${gamelistpath}/$bfile" ]; then
-                samdebug "Applying static screen blacklist for '${core}'"
                 awk "BEGIN{while(getline<\"${gamelistpath}/$bfile\"){a[\$0]=1}} {gamelistfile=\$0;sub(/\\.[^.]*\$/,\"\",gamelistfile);sub(/^.*\\//,\"\",gamelistfile);if(!(gamelistfile in a))print}" \
                 "${tmpfile}" > "${tmpfile}.filtered"
                 if [ -s "${tmpfile}.filtered" ]; then
